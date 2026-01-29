@@ -1,0 +1,1619 @@
+{% extends "base.html" %}
+
+{% block title %}ANY SITE HUB — AI Prompts Library{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">AI Prompts Library</h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300">Discover, test, and share powerful prompts for AI tools</p>
+                </div>
+                {% if current_user.is_authenticated %}
+                <button id="uploadPromptBtn" class="mt-4 lg:mt-0 px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span>Upload Prompt</span>
+                </button>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="mt-4 lg:mt-0 px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>Login to Upload</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Compact Filters -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <!-- Search -->
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input
+                            id="searchInput"
+                            type="text"
+                            placeholder="Search prompts..."
+                            value="{{ search }}"
+                            class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        >
+                    </div>
+                </div>
+
+                <!-- Tool Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tool</label>
+                    <select id="toolFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                        <option value="All" {% if selected_tool == 'All' %}selected{% endif %}>All Tools</option>
+                        {% for tool in tools %}
+                        <option value="{{ tool }}" {% if selected_tool == tool %}selected{% endif %}>{{ tool }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                    <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                        <option value="All" {% if selected_category == 'All' %}selected{% endif %}>All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Sort By -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort</label>
+                    <select id="sortBy" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                        <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Popular</option>
+                        <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Recent</option>
+                        <option value="title" {% if sort_by == 'title' %}selected{% endif %}>A-Z</option>
+                        <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Rated</option>
+                        <option value="likes" {% if sort_by == 'likes' %}selected{% endif %}>Liked</option>
+                    </select>
+                </div>
+
+                <!-- View Toggle -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">View</label>
+                    <div class="flex space-x-1">
+                        <button id="gridView" class="px-2 py-2 bg-purple-600 text-white rounded-lg text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                            </svg>
+                        </button>
+                        <button id="listView" class="px-2 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Row -->
+            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 flex flex-wrap gap-2">
+                <button id="clearFilters" class="px-3 py-1 text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 border border-purple-200 dark:border-purple-700 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                    Clear Filters
+                </button>
+                <button id="showBookmarked" class="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                    Bookmarked
+                </button>
+                <button id="showMyPrompts" class="px-3 py-1 text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 border border-green-200 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                    My Prompts
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing <span id="resultCount">{{ prompts|length }}</span> prompts
+            </div>
+        </div>
+
+        <!-- Prompts Grid -->
+        <div id="promptsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for prompt in prompts %}
+            <div class="prompt-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200">
+                <!-- Prompt Header -->
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ prompt.title }}</h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-block px-2 py-1 rounded-full text-xs font-medium 
+                                {% if prompt.category == 'Marketing' %}text-green-600 bg-green-50 dark:bg-green-900/20
+                                {% elif prompt.category == 'Coding' %}text-blue-600 bg-blue-50 dark:bg-blue-900/20
+                                {% elif prompt.category == 'Art' %}text-purple-600 bg-purple-50 dark:bg-purple-900/20
+                                {% else %}text-gray-600 bg-gray-50 dark:bg-gray-700{% endif %}">
+                                {{ prompt.category }}
+                            </span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">for {{ prompt.tool }}</span>
+                        </div>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                    <label class="ui-bookmark bookmark-prompt" data-prompt-id="{{ prompt.id }}" title="Bookmark this prompt">
+                        <input type="checkbox" {% if prompt.id in saved_prompt_ids %}checked{% endif %} />
+                        <div class="bookmark">
+                            <svg viewBox="0 0 32 32">
+                                <g><path d="M27 4v27a1 1 0 0 1-1.625.781L16 24.281l-9.375 7.5A1 1 0 0 1 5 31V4a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z" /></g>
+                            </svg>
+                        </div>
+                    </label>
+                    {% else %}
+                    <a href="{{ url_for('login', next=request.url) }}" title="Login to bookmark">
+                        <label class="ui-bookmark">
+                            <input type="checkbox" disabled />
+                            <div class="bookmark">
+                                <svg viewBox="0 0 32 32">
+                                    <g><path d="M27 4v27a1 1 0 0 1-1.625.781L16 24.281l-9.375 7.5A1 1 0 0 1 5 31V4a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z" /></g>
+                                </svg>
+                            </div>
+                        </label>
+                    </a>
+                    {% endif %}
+                </div>
+
+                                 <!-- Prompt Content Preview -->
+                 <div class="mb-4">
+                     <p class="text-gray-600 dark:text-gray-300 text-sm prompt-content-preview">{{ prompt.content[:200] }}...</p>
+                     <p class="text-gray-600 dark:text-gray-300 text-sm prompt-content-full hidden">{{ prompt.content }}</p>
+                     <button class="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-xs font-medium read-more-btn mt-1" 
+                             data-prompt-title="{{ prompt.title }}" 
+                             data-prompt-content="{{ prompt.content }}" 
+                             data-prompt-tool="{{ prompt.tool }}"
+                             data-prompt-tool-website="{{ prompt.tool_website or '' }}">
+                         Read More
+                     </button>
+                 </div>
+
+                <!-- Author Info -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-xl">{{ prompt.author.avatar }}</div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ prompt.author.username }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ prompt.created_at.strftime('%b %d, %Y') }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit/Delete buttons for current user's prompts -->
+                    {% if current_user.is_authenticated and prompt.author_id == current_user.id %}
+                    <div class="flex space-x-2">
+                        <button class="edit-prompt-btn px-2 py-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                data-prompt-id="{{ prompt.id }}"
+                                data-prompt-title="{{ prompt.title }}"
+                                data-prompt-content="{{ prompt.content }}"
+                                data-prompt-category="{{ prompt.category }}"
+                                data-prompt-tool="{{ prompt.tool }}"
+                                data-prompt-tags="{{ prompt.tags }}">
+                            Edit
+                        </button>
+                        <button class="delete-prompt-btn px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-700 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                data-prompt-id="{{ prompt.id }}"
+                                data-prompt-title="{{ prompt.title }}">
+                            Delete
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Stats & Actions -->
+                <div class="flex items-center justify-between">
+                                         <div class="flex items-center space-x-4">
+                         <div class="flex items-center space-x-1">
+                             {% if current_user.is_authenticated %}
+                             <button class="like-prompt text-gray-400 hover:text-red-500 transition-colors" data-prompt-id="{{ prompt.id }}" title="Like this prompt">
+                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                 </svg>
+                             </button>
+                             {% else %}
+                             <button class="like-prompt-login text-gray-400 hover:text-red-500 transition-colors" title="Login to like this prompt" data-login-url="{{ url_for('login') }}">
+                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                 </svg>
+                             </button>
+                             {% endif %}
+                             <span class="text-sm font-medium text-gray-600 dark:text-gray-400 like-count">{{ prompt.likes or 0 }}</span>
+                         </div>
+                         <button class="copy-prompt text-gray-400 hover:text-blue-500 transition-colors" data-prompt-content="{{ prompt.content }}" title="Copy to Clipboard">
+                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                             </svg>
+                         </button>
+                     </div>
+                                         <div class="flex space-x-2">
+                         <button class="test-prompt px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors" 
+                                 data-prompt-id="{{ prompt.id }}" 
+                                 data-prompt-content="{{ prompt.content }}"
+                                 data-tool="{{ prompt.tool }}"
+                                 data-tool-website="{{ prompt.tool_website or '' }}">
+                             Test Prompt
+                         </button>
+
+
+                     </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-600">
+                    <div class="flex flex-wrap gap-1">
+                                                        {% for tag in prompt.tags|from_json|safe_slice(0, 3) %}
+                        <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full">{{ tag }}</span>
+                        {% endfor %}
+                        {% if (prompt.tags|from_json|length) > 3 %}
+                        <span class="px-2 py-1 bg-gray-50 dark:bg-gray-600 text-gray-400 dark:text-gray-500 text-xs rounded-full">+{{ (prompt.tags|from_json|length) - 3 }} more</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Load More Button -->
+        {% if prompts|length >= 12 %}
+        <div class="text-center mt-8">
+            <button id="loadMore" class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                Load More Prompts
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Prompt Modal -->
+<div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Upload New Prompt</h2>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="uploadForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Title *</label>
+                        <input
+                            type="text"
+                            name="title"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="e.g., Marketing Email Template"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Content *</label>
+                        <textarea
+                            name="content"
+                            required
+                            rows="6"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Enter your prompt content here..."
+                        ></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tool *</label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="toolSearchInput"
+                                    name="tool"
+                                    required
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    placeholder="Search for a tool..."
+                                    autocomplete="off"
+                                >
+                                <div id="toolSearchResults" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto">
+                                    <!-- Search results will be populated here -->
+                                </div>
+                                <input type="hidden" id="selectedToolId" name="tool_id">
+                                <input type="hidden" id="selectedToolWebsite" name="tool_website">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
+                            <select name="category" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                <option value="">Select a category</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Coding">Coding</option>
+                                <option value="Art">Art</option>
+                                <option value="Writing">Writing</option>
+                                <option value="Business">Business</option>
+                                <option value="Education">Education</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                        <input
+                            type="text"
+                            name="tags"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Enter tags separated by commas (e.g., email, marketing, conversion)"
+                        >
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tags help others find your prompt</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                        <textarea
+                            name="description"
+                            rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Brief description of what this prompt does..."
+                        ></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-600">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <p>🎉 Earn 10 points for uploading a prompt!</p>
+                            <p>📈 Get bonus points for upvotes</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button type="button" id="cancelUpload" class="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                                Upload Prompt
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Prompt Modal -->
+<div id="testModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Test Prompt</h2>
+                    <button id="closeTestModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Prompt Input -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Prompt</h3>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                            <p id="testPromptContent" class="text-gray-700 dark:text-gray-300"></p>
+                        </div>
+                        <textarea
+                            id="testPromptInput"
+                            rows="4"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Add any additional context or parameters..."
+                        ></textarea>
+                        <button id="runTest" class="mt-4 px-6 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                            Run Test
+                        </button>
+                    </div>
+
+                    <!-- Results -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Results</h3>
+                        <div id="testResults" class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 min-h-[200px]">
+                            <p class="text-gray-500 dark:text-gray-400 text-center">Results will appear here after running the test</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prompt Detail Modal -->
+<div id="promptDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 id="promptDetailTitle" class="text-2xl font-bold text-gray-900 dark:text-white">Prompt Details</h2>
+                    <button id="closePromptDetailModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Tool Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tool</label>
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="promptDetailToolSearch"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                placeholder="Search for a tool..."
+                                autocomplete="off"
+                            >
+                            <div id="promptDetailToolResults" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto">
+                                <!-- Search results will be populated here -->
+                            </div>
+                            <input type="hidden" id="promptDetailToolId">
+                            <input type="hidden" id="promptDetailToolWebsite">
+                        </div>
+                    </div>
+
+                    <!-- Prompt Content -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Content</label>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <p id="promptDetailContent" class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap"></p>
+                        </div>
+                    </div>
+
+                    <!-- Optional Input -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your Input (Optional)</label>
+                        <textarea
+                            id="promptDetailInput"
+                            rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Add any specific details or context for your prompt..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button id="copyPromptDetail" class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Copy Prompt</span>
+                        </button>
+                        <button id="testPromptDetail" class="flex-1 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Test This Prompt</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Prompt Modal -->
+<div id="editPromptModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Prompt</h2>
+                    <button id="closeEditModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="editPromptForm" class="space-y-6">
+                    <input type="hidden" id="editPromptId" name="prompt_id">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Title *</label>
+                        <input type="text" id="editPromptTitle" name="title" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                               placeholder="e.g., Marketing Email Template">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Content *</label>
+                        <textarea id="editPromptContent" name="content" rows="6" required
+                                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  placeholder="Enter your prompt content here..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tool *</label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="editToolSearchInput"
+                                    name="tool"
+                                    required
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    placeholder="Search for a tool..."
+                                    autocomplete="off"
+                                >
+                                <div id="editToolSearchResults" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto">
+                                    <!-- Search results will be populated here -->
+                                </div>
+                                <input type="hidden" id="editSelectedToolId" name="tool_id">
+                                <input type="hidden" id="editSelectedToolWebsite" name="tool_website">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
+                            <select id="editPromptCategory" name="category" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                <option value="">Select a category</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Coding">Coding</option>
+                                <option value="Writing">Writing</option>
+                                <option value="Art">Art</option>
+                                <option value="Education">Education</option>
+                                <option value="Business">Business</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags (comma-separated)</label>
+                        <input type="text" id="editPromptTags" name="tags"
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                               placeholder="e.g., email, marketing, conversion">
+                    </div>
+
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button type="button" id="cancelEdit" class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                            Update Prompt
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadPromptBtn = document.getElementById('uploadPromptBtn');
+    const uploadModal = document.getElementById('uploadModal');
+    const closeModal = document.getElementById('closeModal');
+    const cancelUpload = document.getElementById('cancelUpload');
+    const uploadForm = document.getElementById('uploadForm');
+    const gridView = document.getElementById('gridView');
+    const listView = document.getElementById('listView');
+    const promptsContainer = document.getElementById('promptsContainer');
+
+    // Modal functionality
+    if (uploadPromptBtn) {
+        uploadPromptBtn.addEventListener('click', function() {
+            uploadModal.classList.remove('hidden');
+        });
+    }
+
+    function closeUploadModal() {
+        uploadModal.classList.add('hidden');
+        uploadForm.reset();
+    }
+
+    closeModal.addEventListener('click', closeUploadModal);
+    cancelUpload.addEventListener('click', closeUploadModal);
+
+    // Close modal when clicking outside
+    uploadModal.addEventListener('click', function(e) {
+        if (e.target === uploadModal) {
+            closeUploadModal();
+        }
+    });
+
+    // Upload form submission
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(uploadForm);
+        const data = Object.fromEntries(formData);
+        
+        // Parse tags
+        const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        
+        const submitBtn = uploadForm.querySelector('button[type="submit"]');
+        submitBtn.textContent = 'Uploading...';
+        submitBtn.disabled = true;
+        
+        // Get selected tool data
+        const selectedToolId = document.getElementById('selectedToolId').value;
+        const selectedToolWebsite = document.getElementById('selectedToolWebsite').value;
+        const toolName = data.tool;
+        
+        // Make API call to upload prompt
+        fetch('/api/upload/prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: data.title,
+                content: data.content,
+                category: data.category,
+                tool: toolName,
+                tool_id: selectedToolId,
+                tool_website: selectedToolWebsite,
+                tags: tags
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeUploadModal();
+                showNotification(data.message, 'success');
+                
+                // Reload the page to show the new prompt
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(data.message || 'Error uploading prompt', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            showNotification('Error uploading prompt. Please try again.', 'error');
+        })
+        .finally(() => {
+            submitBtn.textContent = 'Upload Prompt';
+            submitBtn.disabled = false;
+        });
+    });
+
+    // View toggle
+    gridView.addEventListener('click', function() {
+        promptsContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+        gridView.className = 'px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium';
+        listView.className = 'px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium';
+        
+        // Restore card appearance for grid (non-flex) and keep dark theme classes
+        document.querySelectorAll('.prompt-card').forEach(card => {
+            card.className = 'prompt-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200';
+        });
+    });
+
+    listView.addEventListener('click', function() {
+        promptsContainer.className = 'space-y-4';
+        listView.className = 'px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium';
+        gridView.className = 'px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium';
+        
+        // Update prompt cards for list view, preserving dark theme classes
+        document.querySelectorAll('.prompt-card').forEach(card => {
+            card.className = 'prompt-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 flex items-center space-x-6';
+        });
+    });
+
+    // Enhanced Filter Functionality
+    const searchInput = document.getElementById('searchInput');
+    const toolFilter = document.getElementById('toolFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortBy = document.getElementById('sortBy');
+    const clearFilters = document.getElementById('clearFilters');
+    const resultCount = document.getElementById('resultCount');
+
+    // Filter Change Handler
+    function updateFilters(filterType = 'all') {
+        const search = searchInput.value;
+        const tool = toolFilter.value;
+        const category = categoryFilter.value;
+        const sort = sortBy.value;
+
+        // Build query string
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (tool !== 'All') params.append('tool', tool);
+        if (category !== 'All') params.append('category', category);
+        if (sort !== 'popular') params.append('sort', sort);
+        if (filterType !== 'all') params.append('filter', filterType);
+
+        // Redirect with new filters
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+
+    // Add event listeners for filter changes
+    searchInput.addEventListener('input', function() {
+        // Debounce search input
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(updateFilters, 500);
+    });
+
+    toolFilter.addEventListener('change', updateFilters);
+    categoryFilter.addEventListener('change', updateFilters);
+    sortBy.addEventListener('change', updateFilters);
+
+    // Clear Filters
+    clearFilters.addEventListener('click', function() {
+        window.location.href = window.location.pathname;
+    });
+
+    // Quick Action Buttons
+    document.getElementById('showBookmarked').addEventListener('click', function() {
+        showNotification('Showing your bookmarked prompts...', 'info');
+        updateFilters('bookmarked');
+    });
+
+    document.getElementById('showMyPrompts').addEventListener('click', function() {
+        showNotification('Showing your uploaded prompts...', 'info');
+        updateFilters('my_prompts');
+    });
+
+    // Edit Prompt Functionality
+    document.querySelectorAll('.edit-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const promptId = this.dataset.promptId;
+            const title = this.dataset.promptTitle;
+            const content = this.dataset.promptContent;
+            const category = this.dataset.promptCategory;
+            const tool = this.dataset.promptTool;
+            const tags = this.dataset.promptTags;
+            
+            // Populate edit form
+            document.getElementById('editPromptId').value = promptId;
+            document.getElementById('editPromptTitle').value = title;
+            document.getElementById('editPromptContent').value = content;
+            document.getElementById('editPromptCategory').value = category;
+            document.getElementById('editToolSearchInput').value = tool;
+            document.getElementById('editPromptTags').value = tags;
+            
+            // Show edit modal
+            document.getElementById('editPromptModal').classList.remove('hidden');
+        });
+    });
+
+    // Delete Prompt Functionality
+    document.querySelectorAll('.delete-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const promptId = this.dataset.promptId;
+            const title = this.dataset.promptTitle;
+            
+            if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+                fetch(`/api/delete/prompt/${promptId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Prompt deleted successfully!', 'success');
+                        setTimeout(() => { window.location.reload(); }, 1000);
+                    } else {
+                        showNotification(data.message || 'Error deleting prompt', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    showNotification('Error deleting prompt. Please try again.', 'error');
+                });
+            }
+        });
+    });
+
+    // Edit Modal Controls
+    const editModal = document.getElementById('editPromptModal');
+    const closeEditModal = document.getElementById('closeEditModal');
+    const cancelEdit = document.getElementById('cancelEdit');
+    const editPromptForm = document.getElementById('editPromptForm');
+
+    closeEditModal.addEventListener('click', function() {
+        editModal.classList.add('hidden');
+    });
+
+    cancelEdit.addEventListener('click', function() {
+        editModal.classList.add('hidden');
+    });
+
+    editModal.addEventListener('click', function(e) {
+        if (e.target === editModal) {
+            editModal.classList.add('hidden');
+        }
+    });
+
+    // Edit Form Submission
+    editPromptForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(editPromptForm);
+        const data = Object.fromEntries(formData);
+        const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        
+        const submitBtn = editPromptForm.querySelector('button[type="submit"]');
+        submitBtn.textContent = 'Updating...';
+        submitBtn.disabled = true;
+        
+        // Get selected tool data
+        const selectedToolId = document.getElementById('editSelectedToolId').value;
+        const selectedToolWebsite = document.getElementById('editSelectedToolWebsite').value;
+        const toolName = data.tool;
+        
+        fetch(`/api/edit/prompt/${data.prompt_id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: data.title,
+                content: data.content,
+                category: data.category,
+                tool: toolName,
+                tool_id: selectedToolId,
+                tool_website: selectedToolWebsite,
+                tags: tags
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                editModal.classList.add('hidden');
+                showNotification('Prompt updated successfully!', 'success');
+                setTimeout(() => { window.location.reload(); }, 1000);
+            } else {
+                showNotification(data.message || 'Error updating prompt', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Update error:', error);
+            showNotification('Error updating prompt. Please try again.', 'error');
+        })
+        .finally(() => {
+            submitBtn.textContent = 'Update Prompt';
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Notification Helper
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        let bgColor = 'bg-purple-500';
+        if (type === 'success') bgColor = 'bg-green-500';
+        else if (type === 'error') bgColor = 'bg-red-500';
+        else if (type === 'warning') bgColor = 'bg-yellow-500';
+        else if (type === 'info') bgColor = 'bg-blue-500';
+        
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium z-50 ${bgColor}`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+
+
+    // Like functionality for authenticated users
+    document.querySelectorAll('.like-prompt').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const promptId = this.dataset.promptId;
+            const icon = this.querySelector('svg');
+            const likeCount = this.parentNode.querySelector('.like-count');
+            
+            // Make API call to like/unlike
+            fetch(`/api/like/prompt/${promptId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    // User not authenticated
+                    showNotification('Please log in to like prompts', 'warning');
+                    return null;
+                }
+                if (response.status === 404) {
+                    showNotification('Prompt not found', 'error');
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    // Update like count
+                    if (likeCount) likeCount.textContent = data.likes;
+                    
+                    // Update button state based on action
+                    if (data.action === 'like') {
+                        this.classList.add('liked', 'text-red-500');
+                        this.classList.remove('text-gray-400');
+                        icon.classList.add('fill-current');
+                    } else {
+                        this.classList.remove('liked', 'text-red-500');
+                        this.classList.add('text-gray-400');
+                        icon.classList.remove('fill-current');
+                    }
+                    
+                    showNotification(data.message, 'success');
+                } else if (data) {
+                    showNotification(data.message || 'Error recording like', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Like error:', error);
+                showNotification('Error recording like. Please try again.', 'error');
+            });
+        });
+    });
+
+    // Login button functionality for non-authenticated users
+    document.querySelectorAll('.like-prompt-login').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const loginUrl = this.dataset.loginUrl;
+            showNotification('Please log in to like prompts', 'info');
+            setTimeout(() => {
+                window.location.href = loginUrl;
+            }, 1500);
+        });
+    });
+
+    // Bookmark login button functionality for non-authenticated users
+    document.querySelectorAll('.bookmark-prompt-login').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const loginUrl = this.dataset.loginUrl;
+            showNotification('Please log in to bookmark prompts', 'info');
+            setTimeout(() => {
+                window.location.href = loginUrl;
+            }, 1500);
+        });
+    });
+
+    // Bookmark functionality
+    document.querySelectorAll('.bookmark-prompt').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!'{{ current_user.is_authenticated }}') {
+                window.location.href = "{{ url_for('login', next=request.url) }}";
+                return;
+            }
+            const promptId = this.dataset.promptId;
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            
+            // Make API call to bookmark/unbookmark
+            fetch(`/api/bookmark/prompt/${promptId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ url_for('login', next=request.url) }}";
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    // Toggle bookmark state based on API response
+                    if (checkbox) {
+                        checkbox.checked = data.action === 'bookmark';
+                    }
+                    showNotification(data.message, 'success');
+                } else if (data) {
+                    showNotification(data.message || 'Error bookmarking prompt', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error bookmarking prompt. Please try again.', 'error');
+            });
+        });
+    });
+
+    // Copy prompt functionality
+    document.querySelectorAll('.copy-prompt').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const promptContent = this.dataset.promptContent;
+            navigator.clipboard.writeText(promptContent).then(() => {
+                showNotification('Prompt copied to clipboard!', 'success');
+            });
+        });
+    });
+
+    // Tool Search Functionality
+    function setupToolSearch(inputId, resultsId, toolIdInput, toolWebsiteInput) {
+        const searchInput = document.getElementById(inputId);
+        const resultsDiv = document.getElementById(resultsId);
+        const toolIdField = document.getElementById(toolIdInput);
+        const toolWebsiteField = document.getElementById(toolWebsiteInput);
+        
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (query.length >= 2) {
+                    searchTools(query, resultsDiv, toolIdField, toolWebsiteField, searchInput);
+                } else if (query.length === 0) {
+                    resultsDiv.classList.add('hidden');
+                }
+            }, 300);
+        });
+        
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.classList.add('hidden');
+            }
+        });
+    }
+    
+    function searchTools(query, resultsDiv, toolIdField, toolWebsiteField, searchInput) {
+        fetch(`/api/tools/search?q=${encodeURIComponent(query)}&limit=10`)
+            .then(response => response.json())
+            .then(tools => {
+                if (tools.length === 0) {
+                    resultsDiv.innerHTML = '<div class="p-3 text-gray-500 dark:text-gray-400 text-sm">No tools found</div>';
+                } else {
+                    resultsDiv.innerHTML = tools.map(tool => `
+                        <div class="tool-result p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0" 
+                             data-tool-id="${tool.id}" 
+                             data-tool-name="${tool.name}" 
+                             data-tool-website="${tool.website}">
+                            <div class="font-medium text-gray-900 dark:text-white">${tool.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${tool.description}</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-500">${tool.category}</div>
+                        </div>
+                    `).join('');
+                    
+                    // Add click handlers to results
+                    resultsDiv.querySelectorAll('.tool-result').forEach(result => {
+                        result.addEventListener('click', function() {
+                            const toolId = this.dataset.toolId;
+                            const toolName = this.dataset.toolName;
+                            const toolWebsite = this.dataset.toolWebsite;
+                            
+                            searchInput.value = toolName;
+                            toolIdField.value = toolId;
+                            toolWebsiteField.value = toolWebsite;
+                            resultsDiv.classList.add('hidden');
+                        });
+                    });
+                }
+                resultsDiv.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error searching tools:', error);
+                resultsDiv.innerHTML = '<div class="p-3 text-red-500 text-sm">Error searching tools</div>';
+                resultsDiv.classList.remove('hidden');
+            });
+    }
+    
+    // Setup tool search for upload modal
+    setupToolSearch('toolSearchInput', 'toolSearchResults', 'selectedToolId', 'selectedToolWebsite');
+    
+    // Setup tool search for prompt detail modal
+    setupToolSearch('promptDetailToolSearch', 'promptDetailToolResults', 'promptDetailToolId', 'promptDetailToolWebsite');
+    
+    // Setup tool search for edit modal
+    setupToolSearch('editToolSearchInput', 'editToolSearchResults', 'editSelectedToolId', 'editSelectedToolWebsite');
+
+    // Read More functionality - Open modal
+    document.querySelectorAll('.read-more-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const title = this.dataset.promptTitle;
+            const content = this.dataset.promptContent;
+            const tool = this.dataset.promptTool;
+            const toolWebsite = this.dataset.promptToolWebsite;
+            
+            // Set modal content
+            document.getElementById('promptDetailTitle').textContent = title;
+            document.getElementById('promptDetailContent').textContent = content;
+            document.getElementById('promptDetailToolSearch').value = tool;
+            document.getElementById('promptDetailToolWebsite').value = toolWebsite || '';
+            document.getElementById('promptDetailInput').value = '';
+            
+            // Show modal
+            document.getElementById('promptDetailModal').classList.remove('hidden');
+        });
+    });
+
+    // Test prompt functionality
+    document.querySelectorAll('.test-prompt').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const promptId = this.dataset.promptId;
+            const promptContent = this.dataset.promptContent;
+            const tool = this.dataset.tool;
+            const toolWebsite = this.dataset.toolWebsite;
+            
+            // Use database tool URL if available, otherwise fallback to hardcoded URLs
+            let toolUrl = toolWebsite;
+            let supportsUrlParams = false;
+            
+            // Check if it's a search tool that supports URL parameters
+            if (tool.toLowerCase().includes('perplexity')) {
+                toolUrl = `https://www.perplexity.ai/?q=${encodeURIComponent(promptContent)}`;
+                supportsUrlParams = true;
+            } else if (tool.toLowerCase().includes('you.com')) {
+                toolUrl = `https://you.com/search?q=${encodeURIComponent(promptContent)}`;
+                supportsUrlParams = true;
+            } else if (!toolUrl || toolUrl.trim() === '') {
+                // Only use fallback URLs if no database URL is available
+                const fallbackUrls = {
+                    'ChatGPT': 'https://chat.openai.com/',
+                    'Claude': 'https://claude.ai/',
+                    'Midjourney': 'https://www.midjourney.com/app/',
+                    'DALL-E': 'https://labs.openai.com/',
+                    'Stable Diffusion': 'https://stability.ai/',
+                    'Bard': 'https://bard.google.com/',
+                    'Bing Chat': 'https://www.bing.com/chat'
+                };
+                
+                toolUrl = fallbackUrls[tool] || 'https://chat.openai.com/';
+            }
+            
+            const config = {
+                url: toolUrl,
+                name: tool || 'AI Tool',
+                instructions: supportsUrlParams ? 
+                    'Your prompt has been added to the URL! Just press Enter to submit.' :
+                    'Click in the input/message box and press Ctrl+V to paste',
+                supportsUrlParams: supportsUrlParams
+            };
+            
+            // Copy prompt to clipboard first
+            navigator.clipboard.writeText(promptContent).then(() => {
+                showNotification(`✅ Prompt copied to clipboard! Opening ${config.name}...`, 'success');
+                
+                // Create a more helpful notification with instructions
+                const instructionModal = document.createElement('div');
+                instructionModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.7);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                `;
+                
+                instructionModal.innerHTML = `
+                    <div style="
+                        background: white;
+                        border-radius: 12px;
+                        padding: 24px;
+                        max-width: 400px;
+                        margin: 20px;
+                        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                        text-align: center;
+                    ">
+                        <div style="
+                            width: 60px;
+                            height: 60px;
+                            background: #10B981;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto 16px;
+                            font-size: 24px;
+                        ">
+                            ✅
+                        </div>
+                        <h3 style="
+                            margin: 0 0 12px 0;
+                            color: #1F2937;
+                            font-size: 18px;
+                            font-weight: 600;
+                        ">
+                            Prompt Ready!
+                        </h3>
+                        <p style="
+                            margin: 0 0 16px 0;
+                            color: #6B7280;
+                            font-size: 14px;
+                            line-height: 1.5;
+                        ">
+                            Your prompt has been copied to clipboard and ${config.name} will open in a new tab.
+                        </p>
+                        <div style="
+                            background: #F3F4F6;
+                            border-radius: 8px;
+                            padding: 12px;
+                            margin: 16px 0;
+                            border-left: 4px solid #10B981;
+                        ">
+                            <p style="
+                                margin: 0;
+                                color: #374151;
+                                font-size: 13px;
+                                font-weight: 500;
+                            ">
+                                <strong>Next steps:</strong><br>
+                                ${config.supportsUrlParams ? 
+                                    `1. ${config.name} will open with your prompt pre-filled<br>
+                                     2. Just press Enter to submit!` :
+                                    `1. ${config.name} will open in a new tab<br>
+                                     2. Click in the input/message box<br>
+                                     3. Press <kbd style="background: #E5E7EB; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Ctrl+V</kbd> to paste`
+                                }
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button onclick="this.closest('.instruction-modal').remove()" style="
+                                background: #6B7280;
+                                color: white;
+                                border: none;
+                                padding: 10px 16px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                font-weight: 500;
+                            ">
+                                Got it!
+                            </button>
+                        </div>
+                    </div>
+                `;
+                instructionModal.className = 'instruction-modal';
+                document.body.appendChild(instructionModal);
+                
+                // Auto-close the modal after 8 seconds
+                setTimeout(() => {
+                    if (instructionModal.parentNode) {
+                        instructionModal.remove();
+                    }
+                }, 8000);
+                
+                // Open the tool in a new tab after a short delay
+                setTimeout(() => {
+                    const newTab = window.open(config.url, '_blank');
+                    
+                    if (newTab) {
+                        // For tools that don't support URL params, try to add helpful overlay
+                        if (!config.supportsUrlParams) {
+                            setTimeout(() => {
+                                try {
+                                    newTab.postMessage({
+                                        type: 'PROMPT_READY',
+                                        prompt: promptContent,
+                                        tool: config.name
+                                    }, '*');
+                                } catch (e) {
+                                    // CORS error expected - this is normal
+                                }
+                            }, 2000);
+                        }
+                    } else {
+                        showNotification('❌ Popup blocked! Please allow popups and try again.', 'error');
+                    }
+                }, 1000);
+                
+            }).catch(() => {
+                // Fallback if clipboard API fails
+                showNotification('❌ Failed to copy prompt. Please copy it manually.', 'error');
+                const newTab = window.open(config.url, '_blank');
+                if (newTab) {
+                    showNotification(`📋 Prompt content: ${promptContent.substring(0, 100)}...`, 'info');
+                }
+            });
+        });
+    });
+
+
+
+
+    
+ 
+
+    // Test modal functionality
+    const testModal = document.getElementById('testModal');
+    const closeTestModal = document.getElementById('closeTestModal');
+    const runTest = document.getElementById('runTest');
+
+    closeTestModal.addEventListener('click', function() {
+        testModal.classList.add('hidden');
+    });
+
+    testModal.addEventListener('click', function(e) {
+        if (e.target === testModal) {
+            testModal.classList.add('hidden');
+        }
+    });
+
+    runTest.addEventListener('click', function() {
+        const resultsDiv = document.getElementById('testResults');
+        const input = document.getElementById('testPromptInput').value;
+        
+        resultsDiv.innerHTML = `
+            <div class="flex items-center space-x-2 mb-4">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-sm text-gray-600">Running test...</span>
+            </div>
+        `;
+        
+        setTimeout(() => {
+            resultsDiv.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-medium text-gray-900 mb-2">Generated Response:</h4>
+                        <p class="text-gray-700 text-sm">This is a simulated response from the AI tool. In a real implementation, this would be the actual output from the AI service.</p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                        <h4 class="font-medium text-green-900 mb-2">Test Results:</h4>
+                        <p class="text-green-700 text-sm">✅ Prompt executed successfully<br>⏱️ Response time: 2.3s<br>🎯 Quality score: 8.5/10</p>
+                    </div>
+                </div>
+            `;
+        }, 2000);
+    });
+
+    // Enhanced Load More Functionality
+    const loadMore = document.getElementById('loadMore');
+    if (loadMore) {
+        loadMore.addEventListener('click', function() {
+            // Simulate loading more prompts
+            this.textContent = 'Loading...';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.textContent = 'Load More Prompts';
+                this.disabled = false;
+                showNotification('More prompts loaded!', 'info');
+            }, 2000);
+        });
+    }
+
+    // Prompt Detail Modal functionality
+    const promptDetailModal = document.getElementById('promptDetailModal');
+    const closePromptDetailModal = document.getElementById('closePromptDetailModal');
+    const copyPromptDetail = document.getElementById('copyPromptDetail');
+    const testPromptDetail = document.getElementById('testPromptDetail');
+
+    // Close modal functionality
+    closePromptDetailModal.addEventListener('click', function() {
+        promptDetailModal.classList.add('hidden');
+    });
+
+    promptDetailModal.addEventListener('click', function(e) {
+        if (e.target === promptDetailModal) {
+            promptDetailModal.classList.add('hidden');
+        }
+    });
+
+    // Copy prompt functionality
+    copyPromptDetail.addEventListener('click', function() {
+        const content = document.getElementById('promptDetailContent').textContent;
+        const input = document.getElementById('promptDetailInput').value;
+        
+        let textToCopy = content;
+        if (input.trim()) {
+            textToCopy = content + '\n\nAdditional context: ' + input;
+        }
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showNotification('Prompt copied to clipboard!', 'success');
+        }).catch(() => {
+            showNotification('Failed to copy prompt. Please try again.', 'error');
+        });
+    });
+
+    // Test prompt functionality
+    testPromptDetail.addEventListener('click', function() {
+        const content = document.getElementById('promptDetailContent').textContent;
+        const input = document.getElementById('promptDetailInput').value;
+        const toolWebsite = document.getElementById('promptDetailToolWebsite').value;
+        const toolName = document.getElementById('promptDetailToolSearch').value;
+        
+        let fullPrompt = content;
+        if (input.trim()) {
+            fullPrompt = content + '\n\nAdditional context: ' + input;
+        }
+        
+        // Use database tool URL if available, otherwise fallback to hardcoded URLs
+        let toolUrl = toolWebsite;
+        let supportsUrlParams = false;
+        
+        // Check if it's a search tool that supports URL parameters
+        if (toolName.toLowerCase().includes('perplexity')) {
+            toolUrl = `https://www.perplexity.ai/?q=${encodeURIComponent(fullPrompt)}`;
+            supportsUrlParams = true;
+        } else if (toolName.toLowerCase().includes('you.com')) {
+            toolUrl = `https://you.com/search?q=${encodeURIComponent(fullPrompt)}`;
+            supportsUrlParams = true;
+        } else if (!toolUrl || toolUrl.trim() === '') {
+            // Only use fallback URLs if no database URL is available
+            const fallbackUrls = {
+                'ChatGPT': 'https://chat.openai.com/',
+                'Claude': 'https://claude.ai/',
+                'Midjourney': 'https://www.midjourney.com/app/',
+                'DALL-E': 'https://labs.openai.com/',
+                'Stable Diffusion': 'https://stability.ai/',
+                'Bard': 'https://bard.google.com/',
+                'Bing Chat': 'https://www.bing.com/chat'
+            };
+            
+            toolUrl = fallbackUrls[toolName] || 'https://chat.openai.com/';
+        }
+        
+        const config = {
+            url: toolUrl,
+            name: toolName || 'AI Tool',
+            instructions: supportsUrlParams ? 
+                'Your prompt has been added to the URL! Just press Enter to submit.' :
+                'Click in the input/message box and press Ctrl+V to paste',
+            supportsUrlParams: supportsUrlParams
+        };
+        
+        // Copy prompt to clipboard first
+        navigator.clipboard.writeText(fullPrompt).then(() => {
+            showNotification(`✅ Prompt copied to clipboard! Opening ${config.name}...`, 'success');
+            
+            // Create instruction modal
+            const instructionModal = document.createElement('div');
+            instructionModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            `;
+            
+            instructionModal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 24px;
+                    max-width: 400px;
+                    margin: 20px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                ">
+                    <div style="
+                        width: 60px;
+                        height: 60px;
+                        background: #10B981;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 16px;
+                        font-size: 24px;
+                    ">
+                        ✅
+                    </div>
+                    <h3 style="
+                        margin: 0 0 12px 0;
+                        color: #1F2937;
+                        font-size: 18px;
+                        font-weight: 600;
+                    ">
+                        Prompt Ready!
+                    </h3>
+                    <p style="
+                        margin: 0 0 16px 0;
+                        color: #6B7280;
+                        font-size: 14px;
+                        line-height: 1.5;
+                    ">
+                        Your prompt has been copied to clipboard and ${config.name} will open in a new tab.
+                    </p>
+                    <div style="
+                        background: #F3F4F6;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin: 16px 0;
+                        border-left: 4px solid #10B981;
+                    ">
+                        <p style="
+                            margin: 0;
+                            color: #374151;
+                            font-size: 13px;
+                            font-weight: 500;
+                        ">
+                            <strong>Next steps:</strong><br>
+                            ${config.supportsUrlParams ? 
+                                `1. ${config.name} will open with your prompt pre-filled<br>
+                                 2. Just press Enter to submit!` :
+                                `1. ${config.name} will open in a new tab<br>
+                                 2. Click in the input/message box<br>
+                                 3. Press <kbd style="background: #E5E7EB; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Ctrl+V</kbd> to paste`
+                            }
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button onclick="this.closest('.instruction-modal').remove()" style="
+                            background: #6B7280;
+                            color: white;
+                            border: none;
+                            padding: 10px 16px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 500;
+                        ">
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            `;
+            instructionModal.className = 'instruction-modal';
+            document.body.appendChild(instructionModal);
+            
+            // Auto-close the modal after 8 seconds
+            setTimeout(() => {
+                if (instructionModal.parentNode) {
+                    instructionModal.remove();
+                }
+            }, 8000);
+            
+            // Open the tool in a new tab after a short delay
+            setTimeout(() => {
+                const newTab = window.open(config.url, '_blank');
+                
+                if (newTab) {
+                    // For tools that don't support URL params, try to add helpful overlay
+                    if (!config.supportsUrlParams) {
+                        setTimeout(() => {
+                            try {
+                                newTab.postMessage({
+                                    type: 'PROMPT_READY',
+                                    prompt: fullPrompt,
+                                    tool: config.name
+                                }, '*');
+                            } catch (e) {
+                                // CORS error expected - this is normal
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    showNotification('❌ Popup blocked! Please allow popups and try again.', 'error');
+                }
+            }, 1000);
+            
+        }).catch(() => {
+            // Fallback if clipboard API fails
+            showNotification('❌ Failed to copy prompt. Please copy it manually.', 'error');
+            const newTab = window.open(config.url, '_blank');
+            if (newTab) {
+                showNotification(`📋 Prompt content: ${fullPrompt.substring(0, 100)}...`, 'info');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

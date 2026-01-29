@@ -1,0 +1,964 @@
+{% extends "base.html" %}
+
+{% block title %}ANY SITE HUB — Discover the Best AI Tools & Prompts{% endblock %}
+
+{% block description %}Find and compare the best AI tools, prompts, and workflows. Discover productivity tools, AI writing assistants, image generators, coding tools, and more. Join our community of AI enthusiasts.{% endblock %}
+
+{% block keywords %}AI tools, artificial intelligence, AI prompts, productivity tools, AI writing, image generation, machine learning tools, AI community, automation tools, ChatGPT, Midjourney, coding tools{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "{{ SITE_NAME }}",
+  "description": "ANY SITE HUB (AI TOOLS HUB) by STERO SONIC LABS — discover and compare AI tools, prompts, and workflows",
+  "url": "{{ request.url_root }}",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "{{ request.url_root }}search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  },
+  "publisher": {
+  "@type": "Organization",
+  "name": "{{ SITE_NAME }}",
+  "url": "{{ request.url_root }}"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Featured AI Tools",
+  "description": "Top-rated AI tools and applications",
+  "numberOfItems": {{ tools|length }},
+  "itemListElement": [
+    {% for tool in tools %}
+    {
+      "@type": "SoftwareApplication",
+      "position": {{ loop.index }},
+      "name": "{{ tool.name }}",
+      "description": "{{ tool.short_description }}",
+      "url": "{{ url_for('tool_detail', tool_id=tool.id, _external=True) }}",
+      "applicationCategory": "{{ tool.category }}",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "{{ tool.pricing }}",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "{{ tool.rating }}",
+        "ratingCount": "{{ tool.review_count }}"
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section (Inspired by provided UI) -->
+<div class="relative overflow-hidden">
+    <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent dark:from-blue-900/10"></div>
+        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 dark:opacity-5"></div>
+        <div class="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-blue-300/30 dark:bg-blue-700/30 blur-3xl"></div>
+        <div class="absolute top-1/3 right-1/4 w-96 h-96 rounded-full bg-purple-300/30 dark:bg-purple-700/30 blur-3xl"></div>
+        <div class="absolute bottom-0 left-1/2 w-80 h-80 rounded-full bg-pink-300/30 dark:bg-pink-700/30 blur-3xl"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 text-center">
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <span class="block">Discover the Right</span>
+            <span class="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI Tool for Any Task</span>
+        </h1>
+        <p class="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-300">
+            Find, compare, and use the best AI & digital tools to boost productivity.
+        </p>
+        <!-- Search with typeahead (preserve IDs) -->
+        <div class="mt-10 max-w-md mx-auto relative">
+            <div class="relative">
+                <input id="searchInput" type="text" placeholder="What do you need help with?"
+                       class="block w-full rounded-lg border-0 py-4 px-6 text-gray-900 dark:text-white dark:bg-gray-800 shadow-lg ring-1 ring-inset ring-gray-300 dark:ring-gray-700 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600" />
+                <button id="heroSearchBtn" class="absolute right-2.5 bottom-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg px-4 py-2 text-sm font-medium">
+                    Search
+                </button>
+            </div>
+            <div id="searchSuggestions" class="hidden absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto"></div>
+        </div>
+        <div class="mt-8 flex flex-wrap justify-center gap-4">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200">5,000+ Tools</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200">100% Free Access</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200">AI-Powered Recommendations</span>
+        </div>
+        <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('ai_agent') }}" class="px-8 py-4 rounded-md text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow">
+                Explore AI Agent
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="px-8 py-4 rounded-md text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow">
+                Sign In to Access AI Agent
+            </a>
+            {% endif %}
+            <a href="{{ url_for('categories') }}" class="px-8 py-4 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400">
+                Browse Categories
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Moving Text Section -->
+<section class="bg-gray-50 dark:bg-gray-800/50 py-12 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="moving-text-container">
+            <div class="moving-text">
+                <span class="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white">"POWERED BY STERO SONIC LABS"</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Tool Directory -->
+<section id="tools" class="py-16 bg-white dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="lg:flex lg:items-center lg:justify-between">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Explore Our Tool Directory</h2>
+                <p class="mt-3 text-lg text-gray-500 dark:text-gray-400">Browse thousands of tools across all categories to find the perfect solution.</p>
+            </div>
+            <div class="mt-5 flex lg:mt-0 lg:ml-4">
+                <span class="hidden sm:block">
+                    <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="fas fa-sliders-h mr-2"></i>
+                        Filters
+                    </button>
+                </span>
+                <span class="sm:ml-3">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('ai_agent') }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add Tool
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                        <i class="fas fa-plus mr-2"></i>
+                        Sign In to Add Tool
+                    </a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="mt-8 flex flex-col">
+            <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                        <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 grid grid-cols-12 gap-3 md:gap-4">
+                            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+                                <label for="tool-search" class="sr-only">Search tools</label>
+                                <div class="relative">
+                                    <input type="text" name="tool-search" id="tool-search" placeholder="Search tools..." class="block w-full h-11 rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm pl-10">
+                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"/></svg>
+                                </div>
+                            </div>
+                            <div class="col-span-6 sm:col-span-3 md:col-span-2">
+                                <label for="category-filter" class="sr-only">Category</label>
+                                <div class="relative">
+                                    <select id="category-filter" name="category-filter" class="block w-full h-11 appearance-none pr-10 rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                        <option>All Categories</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.name }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                            </div>
+                            <div class="col-span-6 sm:col-span-3 md:col-span-2">
+                                <label for="pricing-filter" class="sr-only">Pricing</label>
+                                <div class="relative">
+                                    <select id="pricing-filter" name="pricing-filter" class="block w-full h-11 appearance-none pr-10 rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                        <option>Any Pricing</option>
+                                        <option>Free</option>
+                                        <option>Freemium</option>
+                                        <option>Paid</option>
+                                        <option>Subscription</option>
+                                        <option>One-time</option>
+                                    </select>
+                                    <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                            </div>
+                            <div class="col-span-6 sm:col-span-3 md:col-span-2">
+                                <label for="rating-filter" class="sr-only">Rating</label>
+                                <div class="relative">
+                                    <select id="rating-filter" name="rating-filter" class="block w-full h-11 appearance-none pr-10 rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                        <option>Any Rating</option>
+                                        <option>5 Stars</option>
+                                        <option>4+ Stars</option>
+                                        <option>3+ Stars</option>
+                                        <option>2+ Stars</option>
+                                        <option>1+ Stars</option>
+                                    </select>
+                                    <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                            </div>
+                            <div class="col-span-6 sm:col-span-3 md:col-span-2 flex">
+                                <button type="button" id="apply-filters" class="w-full h-11 inline-flex items-center justify-center px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">Apply</button>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                                <!-- Example static card using existing tool data if available -->
+                                {% for tool in tools|safe_slice(0, 6) %}
+                                <div class="tool-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                                    <div class="p-5">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <img src="https://www.google.com/s2/favicons?sz=64&domain={{ tool.website|domain_from_url }}"
+                                                     onerror="this.onerror=null;this.src='https://icon.horse/icon/{{ tool.website|domain_from_url }}'"
+                                                     alt="{{ tool.name }} logo" class="w-10 h-10 object-contain" loading="lazy">
+                                            </div>
+                                            <div class="ml-4">
+                                                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ tool.name }}</h3>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ tool.provider or '—' }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <p class="text-sm text-gray-600 dark:text-gray-300">{{ tool.short_description }}</p>
+                                        </div>
+                                        <div class="mt-4 flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ "%.1f"|format(tool.rating) }}</span>
+                                            </div>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">{{ tool.pricing }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700/50 px-5 py-3 flex justify-between">
+                                        <a href="#" class="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                            <i class="fas fa-plus mr-1 text-xs"></i>
+                                            Save
+                                        </a>
+                                        <a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">View Details</a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Auto-updated Trending Tools Carousel (preserved IDs) -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Trending Tools</h2>
+                <span class="text-sm text-gray-500 dark:text-gray-400">• Auto-updated</span>
+            </div>
+            <a href="{{ url_for('categories') }}" class="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1">
+                <span>View All</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+        </div>
+        <div class="relative">
+            <div id="trendingCarousel" class="flex space-x-6 overflow-x-auto scrollbar-hide pb-4">
+                {% for tool in tools %}
+                <div class="flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-500">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div>
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain={{ tool.website|domain_from_url }}"
+                                     onerror="this.onerror=null;this.src='https://icon.horse/icon/{{ tool.website|domain_from_url }}'"
+                                     alt="{{ tool.name }} logo" class="w-10 h-10 object-contain" loading="lazy">
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ tool.name }}</h3>
+                                <span class="inline-block px-2 py-1 rounded-full text-xs font-medium {% if tool.pricing == 'Free' %}text-green-600 bg-green-50{% elif tool.pricing == 'Freemium' %}text-blue-600 bg-blue-50{% else %}text-purple-600 bg-purple-50{% endif %}">{{ tool.pricing }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ "%.1f"|format(tool.rating) }}</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">({{ tool.review_count|format_number }})</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">{{ tool.short_description }}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-wrap gap-1">
+                            {% for tag in tool.tags|from_json|safe_slice(0, 2) %}
+                            <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="px-4 py-2 text-white text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">Explore Tool</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button id="prevBtn" class="absolute left-0 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full p-2 shadow">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button id="nextBtn" class="absolute right-0 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full p-2 shadow">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Categories (maps to existing Jinja) -->
+<section id="categories" class="py-16 bg-white dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Popular Categories</h2>
+            <p class="mt-4 max-w-2xl mx-auto text-gray-500 dark:text-gray-400">Browse tools by category to find exactly what you need</p>
+        </div>
+        <div class="mt-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {% for category in categories %}
+            <a href="{{ url_for('categories', category=category.name) }}" class="group flex flex-col items-center p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200">
+                <div class="text-3xl mb-3 group-hover:scale-110 transition-transform">{{ category.icon }}</div>
+                <h3 class="font-semibold text-gray-900 dark:text-white text-center group-hover:text-blue-600 dark:group-hover:text-blue-400">{{ category.name }}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">{{ category.tool_count }} tools</p>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="mt-12 text-center">
+            <a href="{{ url_for('categories') }}" class="inline-flex items-center px-6 py-3 rounded-md text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">View all categories</a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Prompts -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Featured Prompts</h2>
+            </div>
+            <a href="{{ url_for('prompts') }}" class="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700">Explore All Prompts</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for prompt in prompts %}
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-lg transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-medium {% if prompt.category == 'Marketing' %}text-green-600 bg-green-50 dark:bg-green-900/20{% elif prompt.category == 'Coding' %}text-blue-600 bg-blue-50 dark:bg-blue-900/20{% elif prompt.category == 'Art' %}text-purple-600 bg-purple-50 dark:bg-purple-900/20{% else %}text-gray-600 bg-gray-50 dark:bg-gray-700{% endif %}">{{ prompt.category }}</span>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ prompt.upvotes - prompt.downvotes }}</span>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white mb-2">{{ prompt.title }}</h3>
+                <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">{{ prompt.content[:150] }}...</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">for {{ prompt.tool }}</span>
+                    <button class="test-prompt-btn px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/40 transition-colors" 
+                            data-prompt-id="{{ prompt.id }}" 
+                            data-prompt-title="{{ prompt.title }}" 
+                            data-prompt-content="{{ prompt.content }}" 
+                            data-prompt-tool="{{ prompt.tool }}">
+                        Test Prompt
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    </section>
+
+<!-- Latest Community Posts -->
+<section class="py-16 bg-gray-50 dark:bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Latest Community Posts</h2>
+            </div>
+            <a href="{{ url_for('community') }}" class="text-green-600 hover:text-green-700 font-medium flex items-center space-x-1">
+                <span>View All</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for post in posts %}
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-lg transition-all">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="text-2xl">{{ post.author.avatar }}</div>
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white">{{ post.author.username }}</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ post.created_at.strftime('%b %d, %Y') }}</p>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{{ post.title }}</h3>
+                <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">{{ post.content[:120] }}...</p>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-1">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ post.upvotes }}</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ post.comments }}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        {% for tag in post.tags|from_json|safe_slice(0, 2) %}
+                        <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Prompt Test Modal -->
+<div id="promptTestModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="modalPromptTitle">Test Prompt</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tool:</label>
+                <span id="modalPromptTool" class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"></span>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Content:</label>
+                <div id="modalPromptContent" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap"></div>
+            </div>
+            <div class="mb-4">
+                <label for="modalUserInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your Input (Optional):</label>
+                <textarea id="modalUserInput" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-purple-500 focus:ring-purple-500 dark:bg-gray-700 dark:text-white" placeholder="Add any specific details or context for your prompt..."></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="copyPromptBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    Copy Prompt
+                </button>
+                <button id="testPromptBtn" class="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700">
+                    Test This Prompt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Typeahead Search Functionality
+const searchInput = document.getElementById('searchInput');
+const searchSuggestions = document.getElementById('searchSuggestions');
+
+    // Function to perform search
+    function performSearch(query) {
+        if (query.trim()) {
+            // Redirect to dedicated search page
+            window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+        }
+    }
+
+// Track the last processed query to avoid duplicate searches
+let lastProcessedQuery = '';
+
+function triggerSearchSuggestions(query) {
+    if (query.length < 2) {
+        searchSuggestions.classList.add('hidden');
+        return;
+    }
+
+    // Avoid duplicate searches for the same query
+    if (query === lastProcessedQuery) {
+        return;
+    }
+    lastProcessedQuery = query;
+    
+    // Fetch suggestions from API
+    fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(suggestions => {
+            if (suggestions.length > 0) {
+                searchSuggestions.innerHTML = suggestions.slice(0, 5).map(item => 
+                    `<div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 search-suggestion" data-query="${item.split(' - ')[0]}">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <span class="text-gray-700 dark:text-gray-300">${item}</span>
+                        </div>
+                    </div>`
+                ).join('');
+                searchSuggestions.classList.remove('hidden');
+            } else {
+                searchSuggestions.classList.add('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching suggestions:', error);
+            searchSuggestions.classList.add('hidden');
+        });
+}
+
+// Handle search input
+searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    
+    // Only trigger search on space or when query ends with space
+    if (query.endsWith(' ') && query.length > 2) {
+        triggerSearchSuggestions(query);
+    } else if (query.length < 2) {
+        searchSuggestions.classList.add('hidden');
+        lastProcessedQuery = '';
+    }
+});
+
+// Handle search form submission (Enter key)
+searchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = this.value.toLowerCase();
+        if (query.length >= 2) {
+            triggerSearchSuggestions(query);
+        }
+        performSearch(this.value);
+    }
+});
+
+// Handle suggestion clicks
+searchSuggestions.addEventListener('click', function(e) {
+    const suggestion = e.target.closest('.search-suggestion');
+    if (suggestion) {
+        const query = suggestion.dataset.query;
+        searchInput.value = query;
+        searchSuggestions.classList.add('hidden');
+        performSearch(query);
+    }
+});
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+        searchSuggestions.classList.add('hidden');
+    }
+});
+
+// Carousel Functionality
+const carousel = document.getElementById('trendingCarousel');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+if (carousel && prevBtn && nextBtn) {
+    const scrollAmount = 320; // Width of one card + gap
+    
+    prevBtn.addEventListener('click', () => {
+        carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    });
+    
+    nextBtn.addEventListener('click', () => {
+        carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    });
+    
+    // Auto-scroll carousel
+    let autoScrollInterval = setInterval(() => {
+        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+            carousel.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+            carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    }, 5000);
+    
+    // Pause auto-scroll on hover
+    carousel.addEventListener('mouseenter', () => {
+        clearInterval(autoScrollInterval);
+    });
+    
+    carousel.addEventListener('mouseleave', () => {
+        autoScrollInterval = setInterval(() => {
+            if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+                carousel.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }, 5000);
+    });
+}
+</script>
+<script>
+// Wire hero search button to use performSearch
+(function() {
+    const btn = document.getElementById('heroSearchBtn');
+    const input = document.getElementById('searchInput');
+    if (btn && input) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            performSearch(input.value || '');
+        });
+    }
+})();
+</script>
+<script>
+// Home page filter bar -> navigate to categories with filters
+(function() {
+    const applyBtn = document.getElementById('apply-filters');
+    const searchField = document.getElementById('tool-search');
+    const categoryField = document.getElementById('category-filter');
+    const pricingField = document.getElementById('pricing-filter');
+
+    function goToCategories() {
+        const params = new URLSearchParams();
+        if (searchField && searchField.value.trim()) {
+            params.set('search', searchField.value.trim());
+        }
+        if (categoryField && categoryField.value && categoryField.value !== 'All Categories') {
+            params.set('category', categoryField.value);
+        }
+        if (pricingField && pricingField.value && pricingField.value !== 'Any Pricing') {
+            params.set('pricing', pricingField.value);
+        }
+        window.location.href = `/categories?${params.toString()}`;
+    }
+
+    if (applyBtn) {
+        applyBtn.addEventListener('click', goToCategories);
+    }
+    if (searchField) {
+        searchField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                goToCategories();
+            }
+        });
+    }
+})();
+</script>
+<script>
+// Prompt Test Modal Functionality
+(function() {
+    const modal = document.getElementById('promptTestModal');
+    const closeModal = document.getElementById('closeModal');
+    const copyPromptBtn = document.getElementById('copyPromptBtn');
+    const testPromptBtn = document.getElementById('testPromptBtn');
+    const modalTitle = document.getElementById('modalPromptTitle');
+    const modalTool = document.getElementById('modalPromptTool');
+    const modalContent = document.getElementById('modalPromptContent');
+    const modalUserInput = document.getElementById('modalUserInput');
+    
+    let currentPrompt = null;
+    
+    // Handle Test Prompt button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('test-prompt-btn')) {
+            e.preventDefault();
+            
+            // Get prompt data from button attributes
+            currentPrompt = {
+                id: e.target.dataset.promptId,
+                title: e.target.dataset.promptTitle,
+                content: e.target.dataset.promptContent,
+                tool: e.target.dataset.promptTool
+            };
+            
+            // Populate modal with prompt data
+            modalTitle.textContent = currentPrompt.title;
+            modalTool.textContent = currentPrompt.tool;
+            modalContent.textContent = currentPrompt.content;
+            modalUserInput.value = '';
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    });
+    
+    // Close modal functionality
+    function closeModalFunc() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        currentPrompt = null;
+    }
+    
+    closeModal.addEventListener('click', closeModalFunc);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModalFunc();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeModalFunc();
+        }
+    });
+    
+    // Copy prompt functionality
+    copyPromptBtn.addEventListener('click', function() {
+        if (currentPrompt) {
+            const textToCopy = currentPrompt.content;
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                // Show success feedback
+                const originalText = copyPromptBtn.textContent;
+                copyPromptBtn.textContent = 'Copied!';
+                copyPromptBtn.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900/30', 'dark:text-green-200');
+                copyPromptBtn.classList.remove('bg-white', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+                
+                setTimeout(function() {
+                    copyPromptBtn.textContent = originalText;
+                    copyPromptBtn.classList.remove('bg-green-100', 'text-green-800', 'dark:bg-green-900/30', 'dark:text-green-200');
+                    copyPromptBtn.classList.add('bg-white', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy prompt. Please try again.');
+            });
+        }
+    });
+    
+    // Test prompt functionality
+    testPromptBtn.addEventListener('click', function() {
+        if (currentPrompt) {
+            // Get user input if provided
+            const userInput = modalUserInput.value.trim();
+            
+            // Create the full prompt with user input if provided
+            let fullPrompt = currentPrompt.content;
+            if (userInput) {
+                fullPrompt += '\n\nAdditional context: ' + userInput;
+            }
+            
+            // Copy the enhanced prompt to clipboard first
+            navigator.clipboard.writeText(fullPrompt).then(function() {
+                // Show success feedback
+                const originalText = testPromptBtn.textContent;
+                testPromptBtn.textContent = 'Redirecting...';
+                testPromptBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                testPromptBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                
+                // Get tool URL based on tool name
+                const toolUrl = getToolUrl(currentPrompt.tool);
+                
+                // Redirect to tool after a short delay
+                setTimeout(function() {
+                    if (toolUrl) {
+                        window.open(toolUrl, '_blank');
+                    } else {
+                        alert('Tool link not available for ' + currentPrompt.tool);
+                    }
+                    closeModalFunc();
+                }, 1000);
+                
+            }).catch(function(err) {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy prompt. Please try again.');
+            });
+        }
+    });
+    
+    // Function to get tool URL based on tool name
+    function getToolUrl(toolName) {
+        const toolUrls = {
+            'Midjourney': 'https://www.midjourney.com/',
+            'ChatGPT': 'https://chat.openai.com/',
+            'Claude': 'https://claude.ai/',
+            'DALL-E': 'https://openai.com/dall-e-2/',
+            'Stable Diffusion': 'https://stablediffusionweb.com/',
+            'Canva': 'https://www.canva.com/',
+            'Figma': 'https://www.figma.com/',
+            'Adobe Firefly': 'https://firefly.adobe.com/',
+            'Runway': 'https://runwayml.com/',
+            'Jasper': 'https://www.jasper.ai/',
+            'Copy.ai': 'https://www.copy.ai/',
+            'Grammarly': 'https://www.grammarly.com/',
+            'Notion': 'https://www.notion.so/',
+            'GitHub Copilot': 'https://github.com/features/copilot',
+            'Replit': 'https://replit.com/',
+            'CodePen': 'https://codepen.io/',
+            'Stack Overflow': 'https://stackoverflow.com/',
+            'Hugging Face': 'https://huggingface.co/',
+            'Google Bard': 'https://bard.google.com/',
+            'Perplexity': 'https://www.perplexity.ai/',
+            'Character.AI': 'https://character.ai/',
+            'ElevenLabs': 'https://elevenlabs.io/',
+            'Murf': 'https://murf.ai/',
+            'Loom': 'https://www.loom.com/',
+            'Otter.ai': 'https://otter.ai/',
+            'Rev': 'https://www.rev.com/',
+            'Zapier': 'https://zapier.com/',
+            'Make': 'https://www.make.com/',
+            'IFTTT': 'https://ifttt.com/',
+            'Airtable': 'https://airtable.com/',
+            'Monday.com': 'https://monday.com/',
+            'Trello': 'https://trello.com/',
+            'Asana': 'https://asana.com/',
+            'Slack': 'https://slack.com/',
+            'Discord': 'https://discord.com/',
+            'Zoom': 'https://zoom.us/',
+            'Calendly': 'https://calendly.com/',
+            'Typeform': 'https://www.typeform.com/',
+            'SurveyMonkey': 'https://www.surveymonkey.com/',
+            'Mailchimp': 'https://mailchimp.com/',
+            'ConvertKit': 'https://convertkit.com/',
+            'HubSpot': 'https://www.hubspot.com/',
+            'Salesforce': 'https://www.salesforce.com/',
+            'Pipedrive': 'https://www.pipedrive.com/',
+            'Intercom': 'https://www.intercom.com/',
+            'Zendesk': 'https://www.zendesk.com/',
+            'Freshdesk': 'https://freshdesk.com/',
+            'Help Scout': 'https://www.helpscout.com/',
+            'Crisp': 'https://crisp.chat/',
+            'Tidio': 'https://www.tidio.com/',
+            'LiveChat': 'https://www.livechat.com/',
+            'Drift': 'https://www.drift.com/',
+            'Hotjar': 'https://www.hotjar.com/',
+            'FullStory': 'https://www.fullstory.com/',
+            'Mixpanel': 'https://mixpanel.com/',
+            'Amplitude': 'https://amplitude.com/',
+            'Google Analytics': 'https://analytics.google.com/',
+            'SEMrush': 'https://www.semrush.com/',
+            'Ahrefs': 'https://ahrefs.com/',
+            'Moz': 'https://moz.com/',
+            'Screaming Frog': 'https://www.screamingfrog.co.uk/',
+            'GTmetrix': 'https://gtmetrix.com/',
+            'PageSpeed Insights': 'https://pagespeed.web.dev/',
+            'Lighthouse': 'https://developers.google.com/web/tools/lighthouse',
+            'WebPageTest': 'https://www.webpagetest.org/',
+            'Pingdom': 'https://www.pingdom.com/',
+            'UptimeRobot': 'https://uptimerobot.com/',
+            'StatusCake': 'https://www.statuscake.com/',
+            'Pingdom': 'https://www.pingdom.com/',
+            'New Relic': 'https://newrelic.com/',
+            'DataDog': 'https://www.datadoghq.com/',
+            'Sentry': 'https://sentry.io/',
+            'LogRocket': 'https://logrocket.com/',
+            'Bugsnag': 'https://www.bugsnag.com/',
+            'Rollbar': 'https://rollbar.com/',
+            'Honeybadger': 'https://www.honeybadger.io/',
+            'Airbrake': 'https://airbrake.io/',
+            'Raygun': 'https://raygun.com/',
+            'AppSignal': 'https://www.appsignal.com/',
+            'Scout APM': 'https://scoutapm.com/',
+            'Skylight': 'https://www.skylight.io/',
+            'New Relic': 'https://newrelic.com/',
+            'DataDog': 'https://www.datadoghq.com/',
+            'Splunk': 'https://www.splunk.com/',
+            'Elastic': 'https://www.elastic.co/',
+            'Grafana': 'https://grafana.com/',
+            'Prometheus': 'https://prometheus.io/',
+            'InfluxDB': 'https://www.influxdata.com/',
+            'TimescaleDB': 'https://www.timescale.com/',
+            'MongoDB': 'https://www.mongodb.com/',
+            'PostgreSQL': 'https://www.postgresql.org/',
+            'MySQL': 'https://www.mysql.com/',
+            'Redis': 'https://redis.io/',
+            'Memcached': 'https://memcached.org/',
+            'Apache Kafka': 'https://kafka.apache.org/',
+            'RabbitMQ': 'https://www.rabbitmq.com/',
+            'Amazon SQS': 'https://aws.amazon.com/sqs/',
+            'Google Cloud Pub/Sub': 'https://cloud.google.com/pubsub',
+            'Azure Service Bus': 'https://azure.microsoft.com/en-us/services/service-bus/',
+            'AWS Lambda': 'https://aws.amazon.com/lambda/',
+            'Google Cloud Functions': 'https://cloud.google.com/functions',
+            'Azure Functions': 'https://azure.microsoft.com/en-us/services/functions/',
+            'Vercel': 'https://vercel.com/',
+            'Netlify': 'https://www.netlify.com/',
+            'Heroku': 'https://www.heroku.com/',
+            'DigitalOcean': 'https://www.digitalocean.com/',
+            'Linode': 'https://www.linode.com/',
+            'Vultr': 'https://www.vultr.com/',
+            'AWS': 'https://aws.amazon.com/',
+            'Google Cloud': 'https://cloud.google.com/',
+            'Microsoft Azure': 'https://azure.microsoft.com/',
+            'Cloudflare': 'https://www.cloudflare.com/',
+            'Fastly': 'https://www.fastly.com/',
+            'KeyCDN': 'https://www.keycdn.com/',
+            'MaxCDN': 'https://www.maxcdn.com/',
+            'BunnyCDN': 'https://bunny.net/',
+            'StackPath': 'https://www.stackpath.com/',
+            'Incapsula': 'https://www.incapsula.com/',
+            'Sucuri': 'https://sucuri.net/',
+            'Wordfence': 'https://www.wordfence.com/',
+            'iThemes Security': 'https://ithemes.com/security/',
+            'Sucuri': 'https://sucuri.net/',
+            'Cloudflare': 'https://www.cloudflare.com/',
+            'Incapsula': 'https://www.incapsula.com/',
+            'StackPath': 'https://www.stackpath.com/',
+            'KeyCDN': 'https://www.keycdn.com/',
+            'MaxCDN': 'https://www.maxcdn.com/',
+            'BunnyCDN': 'https://bunny.net/',
+            'Fastly': 'https://www.fastly.com/',
+            'Cloudflare': 'https://www.cloudflare.com/',
+            'AWS CloudFront': 'https://aws.amazon.com/cloudfront/',
+            'Google Cloud CDN': 'https://cloud.google.com/cdn',
+            'Azure CDN': 'https://azure.microsoft.com/en-us/services/cdn/',
+            'Akamai': 'https://www.akamai.com/',
+            'Limelight': 'https://www.limelight.com/',
+            'EdgeCast': 'https://www.edgecast.com/',
+            'Level 3': 'https://www.level3.com/',
+            'Cogent': 'https://www.cogentco.com/',
+            'Hurricane Electric': 'https://www.he.net/',
+            'Telia': 'https://www.telia.com/',
+            'Deutsche Telekom': 'https://www.telekom.com/',
+            'Orange': 'https://www.orange.com/',
+            'Vodafone': 'https://www.vodafone.com/',
+            'BT': 'https://www.bt.com/',
+            'Virgin Media': 'https://www.virginmedia.com/',
+            'Sky': 'https://www.sky.com/',
+            'TalkTalk': 'https://www.talktalk.co.uk/',
+            'Plusnet': 'https://www.plus.net/',
+            'EE': 'https://ee.co.uk/',
+            'Three': 'https://www.three.co.uk/',
+            'O2': 'https://www.o2.co.uk/',
+            'Giffgaff': 'https://www.giffgaff.com/',
+            'Tesco Mobile': 'https://www.tescomobile.com/',
+            'ASDA Mobile': 'https://mobile.asda.com/',
+            'Sainsbury\'s Mobile': 'https://www.sainsburysmobile.co.uk/',
+            'Morrisons Mobile': 'https://www.morrisonsmobile.co.uk/',
+            'Waitrose Mobile': 'https://www.waitrosemobile.co.uk/',
+            'Marks & Spencer Mobile': 'https://www.marksandspencer.com/mobile',
+            'John Lewis Mobile': 'https://www.johnlewis.com/mobile',
+            'Currys Mobile': 'https://www.currys.co.uk/mobile',
+            'Carphone Warehouse': 'https://www.carphonewarehouse.com/',
+            'Phones 4u': 'https://www.phones4u.co.uk/',
+            'EE': 'https://ee.co.uk/',
+            'Vodafone': 'https://www.vodafone.co.uk/',
+            'O2': 'https://www.o2.co.uk/',
+            'Three': 'https://www.three.co.uk/',
+            'BT Mobile': 'https://www.bt.com/mobile',
+            'Virgin Mobile': 'https://www.virginmobile.co.uk/',
+            'Sky Mobile': 'https://www.sky.com/mobile',
+            'TalkTalk Mobile': 'https://www.talktalk.co.uk/mobile',
+            'Plusnet Mobile': 'https://www.plus.net/mobile',
+            'Giffgaff': 'https://www.giffgaff.com/',
+            'Tesco Mobile': 'https://www.tescomobile.com/',
+            'ASDA Mobile': 'https://mobile.asda.com/',
+            'Sainsbury\'s Mobile': 'https://www.sainsburysmobile.co.uk/',
+            'Morrisons Mobile': 'https://www.morrisonsmobile.co.uk/',
+            'Waitrose Mobile': 'https://www.waitrosemobile.co.uk/',
+            'Marks & Spencer Mobile': 'https://www.marksandspencer.com/mobile',
+            'John Lewis Mobile': 'https://www.johnlewis.com/mobile',
+            'Currys Mobile': 'https://www.currys.co.uk/mobile',
+            'Carphone Warehouse': 'https://www.carphonewarehouse.com/',
+            'Phones 4u': 'https://www.phones4u.co.uk/'
+        };
+        
+        // Return the URL for the tool, or null if not found
+        return toolUrls[toolName] || null;
+    }
+})();
+</script>
+{% endblock %}

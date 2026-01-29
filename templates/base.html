@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ANY SITE HUB — AI Tools, Prompts & Workflows{% endblock %}</title>
+    <meta name="description" content="{% block description %}ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}{{ DEFAULT_SEO_KEYWORDS }}{% endblock %}">
+    <meta name="author" content="{{ SITE_NAME }}">
+    {% block robots %}
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta name="bingbot" content="index, follow">
+    {% endblock %}
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='logo.svg', _external=True) }}{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="{{ SITE_NAME }}">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url }}">
+    <meta property="twitter:title" content="{% block twitter_title %}{{ self.title() }}{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}{{ self.description() }}{% endblock %}">
+    <meta property="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='logo.svg', _external=True) }}{% endblock %}">
+    <meta property="twitter:site" content="@AIToolsHub">
+    <meta property="twitter:creator" content="@AIToolsHub">
+    
+    <!-- Canonical URL -->
+    {% block canonical %}<link rel="canonical" href="{{ request.base_url }}">{% endblock %}
+    
+    <!-- Favicon and Icons for PWA Support -->
+    <!-- Standard favicons -->
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    
+    <!-- Android Chrome Icons for PWA -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/static/site.webmanifest">
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileImage" content="/android-chrome-192x192.png">
+    <meta name="msapplication-config" content="/static/browserconfig.xml">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="msapplication-TileColor" content="#3b82f6">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ SITE_NAME }}">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "url": "https://www.anysitehub.live",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.anysitehub.live/static/logo.svg",
+        "width": 512,
+        "height": 512
+      },
+      "name": "ANY SITE HUB",
+      "description": "ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.",
+      "sameAs": [
+        "https://twitter.com/AIToolsHub"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "https://www.anysitehub.live",
+      "name": "ANY SITE HUB",
+      "description": "ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "ANY SITE HUB",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.anysitehub.live/static/logo.svg"
+        }
+      }
+    }
+    </script>
+    {% block structured_data %}{% endblock %}
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WKLPK1YHFK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WKLPK1YHFK');
+    </script>
+    
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "thvg8wff58");
+    </script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#eff6ff',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Prevent theme flickering by setting dark mode immediately -->
+    <script>
+      (function() {
+        const savedDarkMode = localStorage.getItem('darkMode');
+        const shouldDark = savedDarkMode === 'true' || (!savedDarkMode && true); // Default to dark theme
+        if (shouldDark) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <style>
+      @keyframes toggle__animation {
+        0%, 100% { transform: translateY(-10px) rotateX(15deg) rotateY(-20deg); }
+        50% { transform: translateY(0px) rotateX(15deg) rotateY(-20deg); }
+      }
+      .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      /* Dark mode transitions */
+      * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      }
+      @keyframes tilt {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(-10deg); }
+        75% { transform: rotate(10deg); }
+        100% { transform: rotate(0deg); }
+      }
+      /* Moving text animation */
+      .moving-text-container {
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+      }
+      .moving-text {
+        display: inline-block;
+        animation: moveText 15s linear infinite;
+        white-space: nowrap;
+      }
+      @keyframes moveText {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+      }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-50" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <a href="{{ url_for('home') }}" class="flex items-center space-x-2" aria-label="Homepage">
+                    <img src="{{ url_for('static', filename='logo-icon.svg') }}" alt="ANY SITE HUB Logo" class="h-8 w-8">
+                    <span class="hidden sm:block text-xl font-bold text-gray-900 dark:text-white">ANY SITE HUB</span>
+                </a>
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{{ url_for('categories') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors {% if request.endpoint == 'categories' %}font-bold underline{% endif %}">
+                        Categories
+                    </a>
+                    <a href="{{ url_for('search') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors {% if request.endpoint == 'search' %}font-bold underline{% endif %}">
+                        Search
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('ai_agent') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors {% if request.endpoint == 'ai_agent' %}font-bold underline{% endif %}">
+                        AI Agent
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('prompts') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors {% if request.endpoint == 'prompts' %}font-bold underline{% endif %}">
+                        Prompts
+                    </a>
+                    <a href="{{ url_for('community') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors {% if request.endpoint == 'community' %}font-bold underline{% endif %}">
+                        Community
+                    </a>
+                    <!-- Dark Mode Toggle -->
+                    <label class="relative inline-block w-16 h-9 align-middle mx-2" aria-label="Toggle dark mode">
+                      <input id="darkModeToggle" type="checkbox" class="peer sr-only" />
+                      <span class="absolute inset-0 cursor-pointer rounded-full bg-sky-400 transition-colors duration-400 peer-checked:bg-[#183153]"></span>
+                      <span class="absolute bottom-[2px] left-[2px] h-[30px] w-[30px] rounded-full bg-gray-200 transition-transform duration-400 peer-checked:translate-x-[30px] z-[2]"></span>
+                      <span class="absolute top-[6px] left-[36px] w-6 h-6 z-[1] animate-[spin_15s_linear_infinite]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="#ffde3bff" viewBox="0 0 24 24">
+                          <circle r="5" cy="12" cx="12"></circle>
+                          <path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path>
+                        </svg>
+                      </span>
+                      <span class="absolute top-[5px] left-[5px] w-6 h-5 z-[1] fill-sky-400 animate-[tilt_5s_linear_infinite]">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                          <path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path>
+                        </svg>
+                      </span>
+                    </label>
+                    <!-- User Menu -->
+                    {% if current_user.is_authenticated %}
+                        <div class="relative">
+                            <button type="button" aria-haspopup="true" aria-controls="userMenu" aria-expanded="false" id="userMenuButton"
+                              class="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm" aria-label="User Avatar">{{ current_user.avatar|e }}</span>
+                                </div>
+                            </button>
+                            <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-2" role="menu" aria-labelledby="userMenuButton">
+                                <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" role="menuitem">
+                                    Dashboard
+                                </a>
+                                <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" role="menuitem">
+                                    Saved Tools
+                                </a>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" role="menuitem">
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="flex items-center space-x-4">
+                            <a href="{{ url_for('login') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                Login
+                            </a>
+                            <a href="{{ url_for('register') }}" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                Sign Up
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Mobile Menu Button -->
+                <button type="button" aria-label="Toggle mobile menu" id="mobileMenuButton" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden border-t border-gray-100 dark:border-gray-700 py-4" role="menu">
+                <div class="flex flex-col space-y-4">
+                    <a href="{{ url_for('categories') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                        Categories
+                    </a>
+                    <a href="{{ url_for('search') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                        Search
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('ai_agent') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                        AI Agent
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('prompts') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                        Prompts
+                    </a>
+                    <a href="{{ url_for('community') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                        Community
+                    </a>
+                    <!-- Dark Mode Toggle (Mobile) -->
+                    <label for="darkModeToggleMobile" class="relative inline-block w-16 h-9 align-middle mx-2" aria-label="Toggle dark mode">
+                      <input id="darkModeToggleMobile" type="checkbox" class="peer sr-only" aria-checked="false" />
+                      <span class="absolute inset-0 cursor-pointer rounded-full bg-sky-400 transition-colors duration-400 peer-checked:bg-[#183153]"></span>
+                      <span class="absolute bottom-[2px] left-[2px] h-[30px] w-[30px] rounded-full bg-gray-200 transition-transform duration-400 peer-checked:translate-x-[30px] z-[2]"></span>
+                      <span class="absolute top-[6px] left-[36px] w-6 h-6 z-[1] animate-[spin_15s_linear_infinite]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="#ffd43b" viewBox="0 0 24 24">
+                          <circle r="5" cy="12" cx="12"></circle>
+                          <path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path>
+                        </svg>
+                      </span>
+                      <span class="absolute top-[5px] left-[5px] w-6 h-6 z-[1] fill-sky-400 animate-[tilt_5s_linear_infinite]">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                          <path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path>
+                        </svg>
+                      </span>
+                    </label>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                            Dashboard
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                            Logout
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                            Login
+                        </a>
+                        <a href="{{ url_for('register') }}" class="block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">
+                            Sign Up
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <main id="main-content" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12" role="contentinfo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">{{ SITE_NAME }}</h3>
+                    <p class="text-gray-400">Your go-to global hub for discovering AI tools, prompts, workflows, and community-driven insights.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Explore</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ url_for('categories') }}" class="hover:text-white transition-colors">Tools</a></li>
+                        <li><a href="{{ url_for('prompts') }}" class="hover:text-white transition-colors">Prompts</a></li>
+                        <li><a href="{{ url_for('community') }}" class="hover:text-white transition-colors">Community</a></li>
+                        {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('ai_agent') }}" class="hover:text-white transition-colors">AI Agent</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Community</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="https://www.sterosoniclabs.tech/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">About</a></li>
+                        <li><a href="https://www.sterosoniclabs.tech/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="{{ url_for('privacy') }}" class="hover:text-white transition-colors">Privacy</a></li>
+                        <li><a href="{{ url_for('terms') }}" class="hover:text-white transition-colors">Terms</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Newsletter</h4>
+                    <p class="text-gray-400 mb-4">Get weekly updates on the latest AI tools and insights.</p>
+                    <form class="flex" aria-label="Newsletter subscription" onsubmit="event.preventDefault(); subscribeNewsletter();">
+                        <label for="newsletter-email" class="sr-only">Email address</label>
+                        <input id="newsletter-email" type="email" placeholder="Enter your email" required
+                            class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
+                            Subscribe
+                        </button>
+                    </form>
+                    <div id="newsletter-message" class="text-sm mt-2"></div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 STERO SONIC LABS. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script defer>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Dark mode toggle sync (theme already set by inline script)
+        const html = document.documentElement;
+        const darkModeToggles = [
+          document.getElementById('darkModeToggle'),
+          document.getElementById('darkModeToggleMobile')
+        ];
+        const savedDarkMode = localStorage.getItem('darkMode');
+        const shouldDark = savedDarkMode === 'true' || (!savedDarkMode && true); // Default to dark theme
+        // Sync toggle states with current theme
+        darkModeToggles.forEach(t => { if (t) t.checked = shouldDark; });
+        darkModeToggles.forEach(toggle => {
+          if (toggle) {
+            toggle.addEventListener('change', function() {
+              html.classList.toggle('dark', this.checked);
+              localStorage.setItem('darkMode', this.checked ? 'true' : 'false');
+              darkModeToggles.forEach(t => { if (t && t !== this) t.checked = this.checked; });
+            });
+          }
+        });
+        // Mobile menu logic
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        mobileMenuButton.addEventListener('click', () => {
+          mobileMenu.classList.toggle('hidden');
+        });
+        // User menu logic
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userMenu = document.getElementById('userMenu');
+        if (userMenuButton && userMenu) {
+          userMenuButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userMenu.classList.toggle('hidden');
+            this.setAttribute('aria-expanded', userMenu.classList.contains('hidden') ? 'false' : 'true');
+          });
+        }
+        // Close menus on outside click
+        document.addEventListener('click', function(event) {
+          if (userMenu && !event.target.closest('.relative')) {
+            userMenu.classList.add('hidden');
+            if (userMenuButton) userMenuButton.setAttribute('aria-expanded', 'false');
+          }
+          if (mobileMenu && !event.target.closest('#mobileMenu') && !event.target.closest('#mobileMenuButton')) {
+            mobileMenu.classList.add('hidden');
+          }
+        });
+        // Close mobile menu on selection
+        if (mobileMenu) {
+          mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
+          });
+        }
+      });
+      // Newsletter subscription (demo error handling)
+      function subscribeNewsletter() {
+        const email = document.getElementById('newsletter-email').value;
+        const message = document.getElementById('newsletter-message');
+        if (!/\S+@\S+\.\S+/.test(email)) {
+          message.textContent = 'Please enter a valid email address.';
+          message.classList.add('text-red-400');
+          return;
+        }
+        // Simulate success
+        message.textContent = 'Thank you for subscribing!';
+        message.classList.remove('text-red-400');
+        message.classList.add('text-green-400');
+      }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,40 @@
+# Bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+venv311/
+
+# Environment files
+.env
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# VCS
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Native artifacts
+*.so
+
+# Logs
+*.log
+
+# Do not bake local databases (we will mount in runtime)
+instance/
+*.db
+*.sqlite3
+
+# Node
+node_modules/

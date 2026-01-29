@@ -1,0 +1,774 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block head_extra %}
+<style>
+    .tool-card, .prompt-card {
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .tool-card:hover, .prompt-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    .tool-card::after, .prompt-card::after {
+        content: 'Click to view details';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 10px;
+        color: #6b7280;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+    }
+    
+    .tool-card:hover::after, .prompt-card:hover::after {
+        opacity: 1;
+    }
+    
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    
+    .dark .tool-card:hover, .dark .prompt-card:hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Welcome back, {{ current_user.username }}!</h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300">Manage your AI tools, track your progress, and discover new recommendations</p>
+                </div>
+                <div class="mt-4 lg:mt-0 flex items-center space-x-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">{{ current_user.points|format_number }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Points</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">Level {{ current_user.level }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Level</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-3 space-y-8">
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Saved Tools</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ saved_tools|length }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Saved Prompts</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ saved_prompts|length }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Contributions</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ current_user.posts|length + current_user.prompts|length }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personalized Recommendations -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">🎯 Personalized Recommendations</h2>
+                        <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">View All</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="text-2xl">🤖</div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">ChatGPT</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Based on your writing interests</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">95% match</span>
+                                <button class="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors" data-tooltip="Learn more about ChatGPT">
+                                    Explore
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="text-2xl">🎨</div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Midjourney</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Perfect for your design needs</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">88% match</span>
+                                <button class="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors" data-tooltip="Learn more about Midjourney">
+                                    Explore
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="text-2xl">💻</div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">GitHub Copilot</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Boost your coding productivity</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">92% match</span>
+                                <button class="px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors" data-tooltip="Learn more about GitHub Copilot">
+                                    Explore
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Tools -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">🔖 Saved Tools</h2>
+                        <a href="{{ url_for('categories') }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">View All</a>
+                    </div>
+                    
+                    {% if saved_tools %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for tool in saved_tools %}
+                        <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer tool-card" data-tool-id="{{ tool.id }}">
+                            <div class="text-2xl">{{ tool.logo }}</div>
+                            <div class="flex-1">
+                                <h3 class="font-medium text-gray-900 dark:text-white">{{ tool.name }}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ tool.short_description }}</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ tool.category }}</span>
+                                    <span class="text-xs px-2 py-1 rounded-full 
+                                        {% if tool.pricing == 'Free' %}text-green-600 bg-green-50 dark:bg-green-900/20
+                                        {% elif tool.pricing == 'Freemium' %}text-blue-600 bg-blue-50 dark:bg-blue-900/20
+                                        {% else %}text-purple-600 bg-purple-50 dark:bg-purple-900/20{% endif %}">
+                                        {{ tool.pricing }}
+                                    </span>
+                                </div>
+                            </div>
+                            <button class="text-red-500 hover:text-red-700 remove-bookmark" data-type="tool" data-id="{{ tool.id }}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">🔖</div>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No saved tools yet</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">Start bookmarking your favorite AI tools to see them here</p>
+                        <a href="{{ url_for('categories') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                            Explore Tools
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Saved Prompts -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">📝 Saved Prompts</h2>
+                        <a href="{{ url_for('prompts') }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">View All</a>
+                    </div>
+                    
+                    {% if saved_prompts %}
+                    <div class="space-y-4">
+                        {% for prompt in saved_prompts %}
+                        <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer prompt-card" data-prompt-id="{{ prompt.id }}">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-xl">
+                                    {% if prompt.category == 'Writing' %}✍️
+                                    {% elif prompt.category == 'Coding' %}💻
+                                    {% elif prompt.category == 'Design' %}🎨
+                                    {% elif prompt.category == 'Marketing' %}📢
+                                    {% else %}🤖{% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="font-medium text-gray-900 dark:text-white">{{ prompt.title }}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">for {{ prompt.tool }} • {{ prompt.category }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors test-prompt">
+                                    Test
+                                </button>
+                                <button class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 remove-bookmark" data-type="prompt" data-id="{{ prompt.id }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">📝</div>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No saved prompts yet</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">Start bookmarking your favorite prompts to see them here</p>
+                        <a href="{{ url_for('prompts') }}" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                            Explore Prompts
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                                 <!-- Recent Activity -->
+                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                     <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">📊 Recent Activity</h2>
+                    
+                    {% if recent_activities %}
+                    <div class="space-y-4">
+                        {% for activity in recent_activities %}
+                                                 <div class="flex items-center space-x-3 p-3 
+                             {% if 'upload' in activity.activity_type %}bg-green-50 dark:bg-green-900/20
+                             {% elif 'vote' in activity.activity_type %}bg-blue-50 dark:bg-blue-900/20
+                             {% elif 'bookmark' in activity.activity_type %}bg-purple-50 dark:bg-purple-900/20
+                             {% elif 'level' in activity.activity_type %}bg-yellow-50 dark:bg-yellow-900/20
+                             {% else %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg">
+                             <div class="w-8 h-8 
+                                 {% if 'upload' in activity.activity_type %}bg-green-100 dark:bg-green-900/30
+                                 {% elif 'vote' in activity.activity_type %}bg-blue-100 dark:bg-blue-900/30
+                                 {% elif 'bookmark' in activity.activity_type %}bg-purple-100 dark:bg-purple-900/30
+                                 {% elif 'level' in activity.activity_type %}bg-yellow-100 dark:bg-yellow-900/30
+                                 {% else %}bg-gray-100 dark:bg-gray-600{% endif %} rounded-full flex items-center justify-center">
+                                 <svg class="w-4 h-4 
+                                     {% if 'upload' in activity.activity_type %}text-green-600 dark:text-green-400
+                                     {% elif 'vote' in activity.activity_type %}text-blue-600 dark:text-blue-400
+                                     {% elif 'bookmark' in activity.activity_type %}text-purple-600 dark:text-purple-400
+                                     {% elif 'level' in activity.activity_type %}text-yellow-600 dark:text-yellow-400
+                                     {% else %}text-gray-600 dark:text-gray-400{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {% if 'upload' in activity.activity_type %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    {% elif 'vote' in activity.activity_type %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                    {% elif 'bookmark' in activity.activity_type %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                    {% elif 'level' in activity.activity_type %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    {% else %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    {% endif %}
+                                </svg>
+                            </div>
+                                                         <div class="flex-1">
+                                 <p class="text-sm font-medium text-gray-900 dark:text-white">{{ activity.description }}</p>
+                                 <p class="text-xs text-gray-500 dark:text-gray-400">
+                                     {{ activity.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                     {% if activity.points_earned > 0 %} • +{{ activity.points_earned }} points{% endif %}
+                                 </p>
+                             </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                                         <div class="text-center py-8">
+                         <div class="text-4xl mb-4">📊</div>
+                         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No recent activity</h3>
+                         <p class="text-gray-500 dark:text-gray-400 mb-4">Start interacting with the platform to see your activity here</p>
+                         <a href="{{ url_for('categories') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                             Explore Tools
+                         </a>
+                     </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                                 <!-- User Profile -->
+                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                     <div class="text-center">
+                         <div class="text-4xl mb-4">{{ current_user.avatar }}</div>
+                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ current_user.username }}</h3>
+                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Member since {{ current_user.joined_at.strftime('%B %Y') }}</p>
+                        
+                                                 <!-- Badges -->
+                         {% if current_user.badges|from_json %}
+                         <div class="flex flex-wrap justify-center gap-2 mb-4">
+                             {% for badge in current_user.badges|from_json %}
+                             <span class="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-xs rounded-full font-medium">{{ badge }}</span>
+                             {% endfor %}
+                         </div>
+                         {% endif %}
+                         
+                         <!-- Progress Bar -->
+                         <div class="mb-4">
+                             <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                 <span>Level {{ current_user.level }}</span>
+                                 <span>Level {{ current_user.level + 1 }}</span>
+                             </div>
+                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                 <div class="bg-blue-600 h-2 rounded-full" style="width: 65%"></div>
+                             </div>
+                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ current_user.points }} / 1000 points to next level</p>
+                         </div>
+                    </div>
+                </div>
+
+                                 <!-- Followed Categories -->
+                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">👀 Followed Categories</h3>
+                     
+                     {% if followed_categories %}
+                     <div class="space-y-3">
+                         {% for category in followed_categories %}
+                         <div class="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="flex items-center space-x-2">
+                                 <div class="text-xl">{{ category.icon }}</div>
+                                 <span class="text-sm font-medium text-gray-900 dark:text-white">{{ category.name }}</span>
+                             </div>
+                             <div class="flex items-center space-x-2">
+                                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ category.tool_count }} tools</span>
+                                 <button class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 unfollow-category" data-id="{{ category.id }}">
+                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                     </svg>
+                                 </button>
+                             </div>
+                         </div>
+                         {% endfor %}
+                     </div>
+                     {% else %}
+                     <div class="text-center py-4">
+                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">You're not following any categories yet</p>
+                     </div>
+                     {% endif %}
+
+                     <button class="w-full mt-4 px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                         + Follow More Categories
+                     </button>
+                 </div>
+
+                                 <!-- Contribution Stats -->
+                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">📈 Contribution Stats</h3>
+                     
+                     <div class="space-y-4">
+                         <div class="flex items-center justify-between">
+                             <span class="text-gray-600 dark:text-gray-400">Posts Created</span>
+                             <span class="font-semibold text-gray-900 dark:text-white">{{ current_user.posts|length }}</span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                             <span class="text-gray-600 dark:text-gray-400">Prompts Shared</span>
+                             <span class="font-semibold text-gray-900 dark:text-white">{{ current_user.prompts|length }}</span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                             <span class="text-gray-600 dark:text-gray-400">Reviews Written</span>
+                             <span class="font-semibold text-gray-900 dark:text-white">0</span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                             <span class="text-gray-600 dark:text-gray-400">Total Upvotes</span>
+                             <span class="font-semibold text-gray-900 dark:text-white">
+                                 {% set total_upvotes = 0 %}
+                                 {% for post in current_user.posts %}
+                                     {% set total_upvotes = total_upvotes + post.upvotes %}
+                                 {% endfor %}
+                                 {% for prompt in current_user.prompts %}
+                                     {% set total_upvotes = total_upvotes + prompt.upvotes %}
+                                 {% endfor %}
+                                 {{ total_upvotes }}
+                             </span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                             <span class="text-gray-600 dark:text-gray-400">Leaderboard Rank</span>
+                             <span class="font-semibold text-gray-900 dark:text-white">#{{ current_user.points|format_number }}</span>
+                         </div>
+                     </div>
+                 </div>
+
+                                 <!-- Quick Actions -->
+                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">⚡ Quick Actions</h3>
+                     
+                     <div class="space-y-3">
+                         <a href="{{ url_for('prompts') }}" class="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                                 <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                 </svg>
+                             </div>
+                             <span class="text-sm font-medium text-gray-900 dark:text-white">Upload Prompt</span>
+                         </a>
+
+                         <a href="{{ url_for('community') }}" class="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                                 <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                 </svg>
+                             </div>
+                             <span class="text-sm font-medium text-gray-900 dark:text-white">Create Post</span>
+                         </a>
+
+                         <a href="{{ url_for('ai_agent') }}" class="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                 </svg>
+                             </div>
+                             <span class="text-sm font-medium text-gray-900 dark:text-white">Get Recommendations</span>
+                         </a>
+
+                         <a href="{{ url_for('categories') }}" class="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                                 <svg class="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                 </svg>
+                             </div>
+                             <span class="text-sm font-medium text-gray-900 dark:text-white">Browse Tools</span>
+                         </a>
+                     </div>
+                 </div>
+
+                                 <!-- Notifications -->
+                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔔 Notifications</h3>
+                     
+                     <div class="space-y-3">
+                         <div class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                             <div>
+                                 <p class="text-sm font-medium text-gray-900 dark:text-white">New tool in Writing category</p>
+                                 <p class="text-xs text-gray-500 dark:text-gray-400">2 hours ago</p>
+                             </div>
+                         </div>
+
+                         <div class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                             <div>
+                                 <p class="text-sm font-medium text-gray-900 dark:text-white">Your prompt got 5 upvotes</p>
+                                 <p class="text-xs text-gray-500 dark:text-gray-400">4 hours ago</p>
+                             </div>
+                         </div>
+
+                         <div class="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                             <div class="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                             <div>
+                                 <p class="text-sm font-medium text-gray-900 dark:text-white">New badge unlocked: Innovator</p>
+                                 <p class="text-xs text-gray-500 dark:text-gray-400">1 day ago</p>
+                             </div>
+                         </div>
+                     </div>
+
+                     <button class="w-full mt-4 px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                         View All Notifications
+                     </button>
+                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Remove saved item functionality
+    document.querySelectorAll('.remove-bookmark').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemType = this.dataset.type;
+            const itemId = this.dataset.id;
+            const item = this.closest('.flex');
+            
+            if (item) {
+                item.style.opacity = '0.5';
+                
+                // Make API call to remove bookmark
+                fetch(`/api/bookmark/${itemType}/${itemId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        setTimeout(() => {
+                            item.remove();
+                            showNotification(data.message, 'success');
+                        }, 300);
+                    } else {
+                        item.style.opacity = '1';
+                        showNotification('Error removing item', 'error');
+                    }
+                })
+                .catch(error => {
+                    item.style.opacity = '1';
+                    showNotification('Error removing item', 'error');
+                });
+            }
+        });
+    });
+
+    // Unfollow category functionality
+    document.querySelectorAll('.unfollow-category').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const categoryId = this.dataset.id;
+            const item = this.closest('.flex');
+            
+            if (item) {
+                item.style.opacity = '0.5';
+                
+                // Make API call to unfollow category
+                fetch(`/api/follow/category/${categoryId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        setTimeout(() => {
+                            item.remove();
+                            showNotification(data.message, 'success');
+                        }, 300);
+                    } else {
+                        item.style.opacity = '1';
+                        showNotification('Error unfollowing category', 'error');
+                    }
+                })
+                .catch(error => {
+                    item.style.opacity = '1';
+                    showNotification('Error unfollowing category', 'error');
+                });
+            }
+        });
+    });
+
+    // Test prompt functionality
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.trim() === 'Test') {
+            btn.addEventListener('click', function() {
+                const promptCard = this.closest('.flex');
+                const promptTitle = promptCard.querySelector('h3').textContent;
+                showNotification(`Opening prompt test interface for: ${promptTitle}`, 'info');
+                // In a real app, this would open the test modal
+                // For now, redirect to prompts page
+                setTimeout(() => {
+                    window.location.href = '/prompts';
+                }, 1500);
+            });
+        }
+    });
+
+    // Explore tool functionality
+    document.querySelectorAll('.tool-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking on the remove bookmark button
+            if (e.target.closest('.remove-bookmark')) {
+                return;
+            }
+            
+            const toolId = this.dataset.toolId;
+            
+            // Add loading state
+            this.style.opacity = '0.7';
+            this.style.pointerEvents = 'none';
+            
+            showNotification(`Opening tool details for ID: ${toolId}`, 'info');
+            
+            // In a real app, this would open the tool details modal
+            // For now, redirect to tool detail page
+            setTimeout(() => {
+                window.location.href = `/tool/${toolId}`;
+            }, 1500);
+        });
+    });
+
+    // Explore prompt functionality
+    document.querySelectorAll('.prompt-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking on the remove bookmark button or test button
+            if (e.target.closest('.remove-bookmark') || e.target.closest('.test-prompt')) {
+                return;
+            }
+            
+            const promptId = this.dataset.promptId;
+            
+            // Add loading state
+            this.style.opacity = '0.7';
+            this.style.pointerEvents = 'none';
+            
+            showNotification(`Opening prompt details for ID: ${promptId}`, 'info');
+            
+            // In a real app, this would open the prompt details modal
+            // For now, redirect to prompt detail page
+            setTimeout(() => {
+                window.location.href = `/prompt/${promptId}`;
+            }, 1500);
+        });
+    });
+
+    // Follow category functionality
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.trim() === '+ Follow More Categories') {
+            btn.addEventListener('click', function() {
+                showNotification('Opening category browser...', 'info');
+                // Redirect to categories page
+                setTimeout(() => {
+                    window.location.href = '/categories';
+                }, 1000);
+            });
+        }
+    });
+
+    // View all notifications functionality
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.trim() === 'View All Notifications') {
+            btn.addEventListener('click', function() {
+                showNotification('Opening notifications panel...', 'info');
+                // In a real app, this would open a notifications modal
+                // For now, just show a demo message
+            });
+        }
+    });
+
+    // View all recommendations functionality
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.trim() === 'View All') {
+            btn.addEventListener('click', function() {
+                showNotification('Opening AI recommendations...', 'info');
+                // Redirect to AI agent page
+                setTimeout(() => {
+                    window.location.href = '/agent';
+                }, 1000);
+            });
+        }
+    });
+
+    // Notification helper
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        let bgColor = 'bg-blue-500';
+        if (type === 'success') bgColor = 'bg-green-500';
+        else if (type === 'error') bgColor = 'bg-red-500';
+        else if (type === 'warning') bgColor = 'bg-yellow-500';
+        
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium z-50 ${bgColor} shadow-lg`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Add animation
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'transform 0.3s ease';
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
+    }
+
+    // Add hover effects for interactive elements
+    document.querySelectorAll('.card-hover').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Initialize tooltips for better UX
+    document.querySelectorAll('[data-tooltip]').forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'absolute z-50 px-2 py-1 text-sm text-white bg-gray-900 rounded shadow-lg';
+            tooltip.textContent = this.dataset.tooltip;
+            tooltip.style.top = (this.offsetTop - 30) + 'px';
+            tooltip.style.left = (this.offsetLeft + this.offsetWidth / 2) + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+            
+            this.appendChild(tooltip);
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            const tooltip = this.querySelector('div');
+            if (tooltip) tooltip.remove();
+        });
+    });
+
+    // Add loading states for better UX
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains('loading')) return;
+            
+            const originalText = this.textContent;
+            this.classList.add('loading');
+            this.textContent = 'Loading...';
+            this.disabled = true;
+            
+            // Reset after a delay (in real app, this would be after API call)
+            setTimeout(() => {
+                this.classList.remove('loading');
+                this.textContent = originalText;
+                this.disabled = false;
+            }, 2000);
+        });
+    });
+});
+</script>
+{% endblock %}
+

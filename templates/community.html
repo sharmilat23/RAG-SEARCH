@@ -1,0 +1,2353 @@
+{% extends "base.html" %}
+
+{% block title %}ANY SITE HUB — Community Hub{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Community Hub</h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300">Share insights, ask questions, and connect with AI enthusiasts</p>
+                </div>
+                {% if current_user.is_authenticated %}
+                <button id="createPostBtn" class="mt-4 lg:mt-0 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span>Create Post</span>
+                </button>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="mt-4 lg:mt-0 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>Login to Post</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-3">
+                <!-- Tabs -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
+                    <div class="border-b border-gray-200 dark:border-gray-600">
+                        <nav class="flex space-x-8 px-6">
+                            <button class="tab-btn py-4 px-1 border-b-2 font-medium text-sm {% if active_tab == 'posts' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500{% endif %}" data-tab="posts" data-url="{{ url_for('community') }}?tab=posts">
+                                Posts
+                            </button>
+                            <button class="tab-btn py-4 px-1 border-b-2 font-medium text-sm {% if active_tab == 'discussions' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500{% endif %}" data-tab="discussions" data-url="{{ url_for('community') }}?tab=discussions">
+                                Discussions
+                            </button>
+                            <button class="tab-btn py-4 px-1 border-b-2 font-medium text-sm {% if active_tab == 'questions' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500{% endif %}" data-tab="questions" data-url="{{ url_for('community') }}?tab=questions">
+                                Q&A
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="p-6">
+                        <!-- Posts Tab -->
+                        <div id="postsTab" class="tab-content {% if active_tab == 'posts' %}block{% else %}hidden{% endif %}">
+                            <!-- Search and Filter Controls -->
+                            <div class="mb-6">
+                                <!-- Search Bar -->
+                                <div class="mb-4">
+                                    <div class="relative">
+                                        <input type="text" id="searchPosts" placeholder="Search posts..." 
+                                               class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                               value="{{ request.args.get('search', '') }}">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Filter Controls -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <select id="sortPosts" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                            <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Most Popular</option>
+                                            <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Most Recent</option>
+                                            <option value="discussed" {% if sort_by == 'discussed' %}selected{% endif %}>Most Discussed</option>
+                                        </select>
+                                        
+                                        <!-- Filter Buttons -->
+                                        <div class="flex items-center space-x-2">
+                                            <button id="clearFilters" class="px-3 py-1 text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 border border-green-200 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                                                Clear Filters
+                                            </button>
+                                            {% if current_user.is_authenticated %}
+                                            <button id="showMyPosts" class="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                                My Posts
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <button id="listView" class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                                                         <!-- Posts List (Horizontal) -->
+                             <div id="postsContainer" class="space-y-6">
+                                 {% for post in posts %}
+                                 <div class="post-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200" data-post-id="{{ post.id }}">
+                                    <!-- Post Header -->
+                                    <div class="flex items-start space-x-3 mb-4">
+                                        <div class="text-2xl">{{ post.author.avatar }}</div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2">
+                                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ post.author.username }}</h3>
+                                                {% if post.author.badges|from_json %}
+                                                <div class="flex items-center space-x-1">
+                                                                                                                {% for badge in post.author.badges|from_json|safe_slice(0, 2) %}
+                                                    <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 text-xs rounded-full">{{ badge }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ post.created_at.strftime('%b %d, %Y') }}</p>
+                                        </div>
+                                        
+                                        <!-- Edit/Delete buttons for current user's posts -->
+                                        {% if current_user.is_authenticated and post.author_id == current_user.id %}
+                                        <div class="flex items-center space-x-2">
+                                            <button class="edit-post-btn px-2 py-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                                    data-post-id="{{ post.id }}"
+                                                    data-post-title="{{ post.title }}"
+                                                    data-post-content="{{ post.content }}">
+                                                Edit
+                                            </button>
+                                            <button class="delete-post-btn px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-700 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                    data-post-id="{{ post.id }}"
+                                                    data-post-title="{{ post.title }}">
+                                                Delete
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <label class="ui-bookmark bookmark-post" data-post-id="{{ post.id }}" title="Bookmark this post">
+                                            <input type="checkbox" {% if post.id in saved_post_ids %}checked{% endif %} />
+                                            <div class="bookmark">
+                                                <svg viewBox="0 0 32 32">
+                                                    <g>
+                                                        <path d="M27 4v27a1 1 0 0 1-1.625.781L16 24.281l-9.375 7.5A1 1 0 0 1 5 31V4a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z" />
+                                                    </g>
+                                                </svg>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                                                         <!-- Post Content -->
+                                     <h4 class="font-semibold text-gray-900 dark:text-white mb-3 text-lg">{{ post.title }}</h4>
+                                     <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
+
+                                                                         <!-- Post Tags -->
+                                     <div class="flex flex-wrap gap-2 mb-4">
+                                         {% for tag in post.tags|from_json|safe_slice(0, 4) %}
+                                         <span class="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-700">{{ tag }}</span>
+                                         {% endfor %}
+                                     </div>
+
+                                                                         <!-- Post Stats -->
+                                     <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-600" data-debug="post-{{ post.id }}-stats">
+                                                                                   <div class="flex items-center space-x-6">
+                                              <div class="flex items-center space-x-1">
+                                                  <button class="upvote-post text-gray-400 hover:text-green-500 transition-colors p-1 rounded" data-post-id="{{ post.id }}">
+                                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                                      </svg>
+                                                  </button>
+                                                  <span class="text-sm font-semibold text-gray-900 dark:text-white vote-count">{{ (post.upvotes or 0) - (post.downvotes or 0) }}</span>
+                                                  <button class="downvote-post text-gray-400 hover:text-red-500 transition-colors p-1 rounded" data-post-id="{{ post.id }}">
+                                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                      </svg>
+                                                  </button>
+                                              </div>
+                                              <div class="flex items-center space-x-2">
+                                                  <button class="like-post text-gray-400 hover:text-red-500 transition-colors p-1 rounded" data-post-id="{{ post.id }}">
+                                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                                      </svg>
+                                                  </button>
+                                                  <span class="text-sm font-medium text-gray-600 dark:text-gray-400 like-count">{{ post.likes or 0 }}</span>
+                                              </div>
+                                              <div class="flex items-center space-x-2">
+                                                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                                  </svg>
+                                                  <span class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ post.comments or 0 }}</span>
+                                              </div>
+                                          </div>
+                                         <button class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold view-post px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" data-post-id="{{ post.id }}">
+                                             View Post →
+                                         </button>
+                                     </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Load More -->
+                            {% if posts|length >= 8 %}
+                            <div class="text-center mt-8">
+                                <button id="loadMorePosts" class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                    Load More Posts
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Discussions Tab -->
+                        <div id="discussionsTab" class="tab-content {% if active_tab == 'discussions' %}block{% else %}hidden{% endif %}">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Discussion Threads</h3>
+                                <button id="startDiscussionBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">Start Discussion</button>
+                            </div>
+                            <div class="space-y-6">
+                                {% if posts %}
+                                    {% for post in posts %}
+                                        <div class="post-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200" data-post-id="{{ post.id }}">
+                                            <div class="flex items-start space-x-3 mb-4">
+                                                <div class="text-2xl">{{ post.author.avatar }}</div>
+                                                <div class="flex-1">
+                                                    <div class="flex items-center space-x-2">
+                                                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ post.author.username }}</h3>
+                                                    </div>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ post.created_at.strftime('%b %d, %Y') }}</p>
+                                                </div>
+                                                {% if current_user.is_authenticated and post.author_id == current_user.id %}
+                                                <div class="flex items-center space-x-2">
+                                                    <button class="edit-post-btn px-2 py-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                                            data-post-id="{{ post.id }}"
+                                                            data-post-title="{{ post.title }}"
+                                                            data-post-content="{{ post.content }}">
+                                                        Edit
+                                                    </button>
+                                                    <button class="delete-post-btn px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-700 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                            data-post-id="{{ post.id }}"
+                                                            data-post-title="{{ post.title }}">
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <h4 class="font-semibold text-gray-900 dark:text-white mb-3 text-lg">{{ post.title }}</h4>
+                                            <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
+                                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-600">
+                                                <div class="flex items-center space-x-6">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="text-sm font-semibold text-gray-900 dark:text-white">↑ {{ (post.upvotes or 0) - (post.downvotes or 0) }}</span>
+                                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-400">💬 {{ post.comments or 0 }}</span>
+                                                    </div>
+                                                </div>
+                                                <button class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold view-post px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" data-post-id="{{ post.id }}">
+                                                    View Discussion →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-12">
+                                        <div class="text-6xl mb-4">💬</div>
+                                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No discussions yet</h3>
+                                        <p class="text-gray-600 dark:text-gray-400 mb-4">Be the first to start a discussion.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Q&A Tab -->
+                        <div id="questionsTab" class="tab-content {% if active_tab == 'questions' %}block{% else %}hidden{% endif %}">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Questions & Answers</h3>
+                                <button id="askQuestionBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">Ask Question</button>
+                            </div>
+                            <div class="space-y-6">
+                                {% if posts %}
+                                    {% for post in posts %}
+                                        <div class="post-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200" data-post-id="{{ post.id }}">
+                                            <div class="flex items-start space-x-3 mb-4">
+                                                <div class="text-2xl">{{ post.author.avatar }}</div>
+                                                <div class="flex-1">
+                                                    <div class="flex items-center space-x-2">
+                                                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ post.author.username }}</h3>
+                                                    </div>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ post.created_at.strftime('%b %d, %Y') }}</p>
+                                                </div>
+                                                {% if current_user.is_authenticated and post.author_id == current_user.id %}
+                                                <div class="flex items-center space-x-2">
+                                                    <button class="edit-post-btn px-2 py-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                                            data-post-id="{{ post.id }}"
+                                                            data-post-title="{{ post.title }}"
+                                                            data-post-content="{{ post.content }}">
+                                                        Edit
+                                                    </button>
+                                                    <button class="delete-post-btn px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-700 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                            data-post-id="{{ post.id }}"
+                                                            data-post-title="{{ post.title }}">
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <h4 class="font-semibold text-gray-900 dark:text-white mb-3 text-lg">{{ post.title }}</h4>
+                                            <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
+                                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-600">
+                                                <div class="flex items-center space-x-6">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="text-sm font-semibold text-gray-900 dark:text-white">↑ {{ (post.upvotes or 0) - (post.downvotes or 0) }}</span>
+                                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-400">💬 {{ post.comments or 0 }}</span>
+                                                    </div>
+                                                </div>
+                                                <button class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold view-post px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" data-post-id="{{ post.id }}">
+                                                    View Question →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-12">
+                                        <div class="text-6xl mb-4">❓</div>
+                                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No questions yet</h3>
+                                        <p class="text-gray-600 dark:text-gray-400 mb-4">Ask the first question to get answers from the community.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Leaderboard -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🏆 Leaderboard</h3>
+                    
+                    <div class="space-y-3">
+                        {% for user in users %}
+                        <div class="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            <div class="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full text-white font-bold text-sm">
+                                {{ loop.index }}
+                            </div>
+                            <div class="text-2xl">{{ user.avatar }}</div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-medium text-gray-900 dark:text-white truncate">{{ user.username }}</h4>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ user.points|format_number }} pts</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">Level {{ user.level }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1 flex-shrink-0">
+                                {% for badge in user.badges|from_json|safe_slice(0, 1) %}
+                                <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 text-xs rounded-full whitespace-nowrap">{{ badge }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button id="viewFullLeaderboard" class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium transition-colors">View Full Leaderboard</button>
+                    </div>
+                </div>
+
+                <!-- Badges & Achievements -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🎖️ Badges & Achievements</h3>
+                    
+                                         <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                            <div class="text-2xl mb-2">🏆</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">Top Contributor</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">50+ posts</div>
+                        </div>
+                        <div class="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div class="text-2xl mb-2">⭐</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">Quality Master</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">100+ upvotes</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <div class="text-2xl mb-2">🚀</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">Early Adopter</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Joined first</div>
+                        </div>
+                        <div class="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                            <div class="text-2xl mb-2">💡</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">Innovator</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">10+ tools</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Community Stats -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Community Stats</h3>
+                    
+                                         <div class="space-y-4">
+                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                             <span class="text-gray-600 dark:text-gray-400 font-medium">Total Members</span>
+                             <span class="font-bold text-gray-900 dark:text-white text-lg">12,847</span>
+                         </div>
+                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                             <span class="text-gray-600 dark:text-gray-400 font-medium">Posts Today</span>
+                             <span class="font-bold text-gray-900 dark:text-white text-lg">47</span>
+                         </div>
+                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                             <span class="text-gray-600 dark:text-gray-400 font-medium">Active Discussions</span>
+                             <span class="font-bold text-gray-900 dark:text-white text-lg">23</span>
+                         </div>
+                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                             <span class="text-gray-600 dark:text-gray-400 font-medium">Tools Reviewed</span>
+                             <span class="font-bold text-gray-900 dark:text-white text-lg">156</span>
+                         </div>
+                     </div>
+                </div>
+
+                <!-- Trending Topics -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔥 Trending Topics</h3>
+                    
+                                         <div class="space-y-3">
+                         <a href="#" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-100 dark:border-gray-600">
+                             <div class="font-semibold text-gray-900 dark:text-white text-lg">#ChatGPT-4</div>
+                             <div class="text-sm text-gray-500 dark:text-gray-400">1.2k discussions</div>
+                         </a>
+                         <a href="#" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-100 dark:border-gray-600">
+                             <div class="font-semibold text-gray-900 dark:text-white text-lg">#AI-Workflow</div>
+                             <div class="text-sm text-gray-500 dark:text-gray-400">856 discussions</div>
+                         </a>
+                         <a href="#" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-100 dark:border-gray-600">
+                             <div class="font-semibold text-gray-900 dark:text-white text-lg">#Prompt-Engineering</div>
+                             <div class="text-sm text-gray-500 dark:text-gray-400">743 discussions</div>
+                         </a>
+                         <a href="#" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-100 dark:border-gray-600">
+                             <div class="font-semibold text-gray-900 dark:text-white text-lg">#AI-Integration</div>
+                             <div class="text-sm text-gray-500 dark:text-gray-400">621 discussions</div>
+                         </a>
+                     </div>
+                </div>
+
+                <!-- Community Guidelines -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-green-200 dark:border-green-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">📋 Community Guidelines</h3>
+                    
+                    <div class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                        <p>• Be respectful and constructive</p>
+                        <p>• Share valuable insights and experiences</p>
+                        <p>• Avoid self-promotion without context</p>
+                        <p>• Help others learn and grow</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Post Modal -->
+<div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Post</h2>
+                    <button id="closeCreateModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="createPostForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title *</label>
+                        <input
+                            type="text"
+                            name="title"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="What's your post about?"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Type</label>
+                        <select name="type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="post">General Post</option>
+                            <option value="review">Tool Review</option>
+                            <option value="tutorial">Tutorial/Guide</option>
+                            <option value="question">Question</option>
+                            <option value="discussion">Discussion</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content *</label>
+                        <textarea
+                            name="content"
+                            required
+                            rows="8"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Share your thoughts, experiences, or questions..."
+                        ></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                        <input
+                            type="text"
+                            name="tags"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Add relevant tags (e.g., ChatGPT, workflow, tips)"
+                        >
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tags help others find your post</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-600">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <p>🎉 Earn 5 points for creating a post!</p>
+                            <p>📈 Get bonus points for upvotes and engagement</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button type="button" id="cancelCreate" class="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                Create Post
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Post Detail Modal -->
+<div id="postDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Post Title</h2>
+                    <button id="closePostModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                                 <div class="space-y-6">
+                     <!-- Post Header Info -->
+                     <div class="flex items-center space-x-4 pb-4 border-b border-gray-200 dark:border-gray-600">
+                         <div class="text-2xl">👨‍💻</div>
+                         <div>
+                             <div class="font-semibold text-gray-900 dark:text-white post-author">Author Name</div>
+                             <div class="text-sm text-gray-500 dark:text-gray-400 post-date">Date</div>
+                         </div>
+                         <div class="flex items-center space-x-2 ml-auto">
+                             <span class="text-sm text-gray-600 dark:text-gray-400">↑ <span class="post-upvotes">0</span></span>
+                             <span class="text-sm text-gray-600 dark:text-gray-400">💬 <span class="post-comments">0</span></span>
+                         </div>
+                     </div>
+                     
+                     <!-- Post Tags -->
+                     <div class="post-tags flex flex-wrap gap-2">
+                         <!-- Tags will be populated here -->
+                     </div>
+                     
+                     <!-- Post Content -->
+                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                         <p class="text-gray-700 dark:text-gray-300 leading-relaxed post-content">Post content will appear here...</p>
+                     </div>
+
+                    <!-- Comments Section -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Comments</h3>
+                        
+                        <!-- Add Comment -->
+                        <div class="mb-6">
+                            <textarea
+                                id="commentTextarea"
+                                placeholder="Add a comment..."
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                rows="3"
+                            ></textarea>
+                            <div class="mt-2 flex justify-end">
+                                <button id="postCommentBtn" class="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                    Post Comment
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Comments List -->
+                        <div id="commentsList" class="space-y-5">
+                            <!-- Comments will be loaded dynamically here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Post Modal -->
+<div id="editPostModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Post</h2>
+                    <button id="closeEditPostModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="editPostForm" class="space-y-6">
+                    <input type="hidden" id="editPostId" name="post_id">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title *</label>
+                        <input type="text" id="editPostTitle" name="title" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                               placeholder="Enter post title...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Content *</label>
+                        <textarea id="editPostContent" name="content" rows="8" required
+                                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  placeholder="Share your thoughts, insights, or questions..."></textarea>
+                    </div>
+
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button type="button" id="cancelEditPost" class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                            Update Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Leaderboard Modal -->
+<div id="fullLeaderboardModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🏆 Full Leaderboard</h2>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">See all community members ranked by their contributions</p>
+            </div>
+            <button id="closeFullLeaderboardModal" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <svg class="w-6 h-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div id="leaderboardContent">
+                <!-- Leaderboard content will be loaded here -->
+            </div>
+            <div id="leaderboardPagination">
+                <!-- Pagination will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createPostBtn = document.getElementById('createPostBtn');
+    const createPostModal = document.getElementById('createPostModal');
+    const closeCreateModal = document.getElementById('closeCreateModal');
+    const cancelCreate = document.getElementById('cancelCreate');
+    const createPostForm = document.getElementById('createPostForm');
+    const postTypeSelect = createPostForm ? createPostForm.querySelector('select[name="type"]') : null;
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const listView = document.getElementById('listView');
+    const postsContainer = document.getElementById('postsContainer');
+
+    // Modal functionality
+    if (createPostBtn) {
+        createPostBtn.addEventListener('click', function() {
+            createPostModal.classList.remove('hidden');
+        });
+    }
+
+    // Open modal helpers for specific types
+    const startDiscussionBtn = document.getElementById('startDiscussionBtn');
+    const askQuestionBtn = document.getElementById('askQuestionBtn');
+    function openCreateModalWithType(typeValue) {
+        if (!createPostModal || !createPostForm) return;
+        createPostModal.classList.remove('hidden');
+        if (postTypeSelect) {
+            postTypeSelect.value = typeValue;
+        }
+    }
+    if (startDiscussionBtn) {
+        startDiscussionBtn.addEventListener('click', function() {
+            openCreateModalWithType('discussion');
+        });
+    }
+    if (askQuestionBtn) {
+        askQuestionBtn.addEventListener('click', function() {
+            openCreateModalWithType('question');
+        });
+    }
+
+    function closeCreatePostModal() {
+        createPostModal.classList.add('hidden');
+        createPostForm.reset();
+    }
+
+    closeCreateModal.addEventListener('click', closeCreatePostModal);
+    cancelCreate.addEventListener('click', closeCreatePostModal);
+
+    createPostModal.addEventListener('click', function(e) {
+        if (e.target === createPostModal) {
+            closeCreatePostModal();
+        }
+    });
+
+         // Create post form submission
+     createPostForm.addEventListener('submit', function(e) {
+         e.preventDefault();
+         
+         const formData = new FormData(createPostForm);
+         const data = Object.fromEntries(formData);
+         
+         // Parse tags
+         const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+         
+         const submitBtn = createPostForm.querySelector('button[type="submit"]');
+         submitBtn.textContent = 'Creating...';
+         submitBtn.disabled = true;
+         
+         // Make API call to create post
+         fetch('/api/upload/post', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+             },
+             body: JSON.stringify({
+                 title: data.title,
+                 content: data.content,
+                 type: data.type,
+                 tags: tags
+             })
+         })
+         .then(response => response.json())
+         .then(data => {
+             if (data.success) {
+                 closeCreatePostModal();
+                 showNotification(data.message, 'success');
+                 
+                 // Add the new post to the page dynamically
+                 addNewPostToPage(data.post_id, formData.get('title'), formData.get('content'), formData.get('tags'));
+             } else {
+                 showNotification(data.message || 'Error creating post', 'error');
+             }
+         })
+         .catch(error => {
+             showNotification('Error creating post', 'error');
+         })
+         .finally(() => {
+             submitBtn.textContent = 'Create Post';
+             submitBtn.disabled = false;
+         });
+     });
+
+    // Ensure default view is list
+    if (postsContainer) {
+        postsContainer.className = 'space-y-6';
+    }
+
+    // Tab functionality
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetUrl = this.dataset.url;
+            if (targetUrl) {
+                window.location.href = targetUrl;
+                return;
+            }
+            // Fallback to in-page switch
+            const tabName = this.dataset.tab;
+            tabBtns.forEach(b => {
+                b.classList.remove('border-green-500', 'text-green-600');
+                b.classList.add('border-transparent', 'text-gray-500');
+            });
+            this.classList.remove('border-transparent', 'text-gray-500');
+            this.classList.add('border-green-500', 'text-green-600');
+            tabContents.forEach(content => { content.classList.add('hidden'); });
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+        });
+    });
+
+    // Only list view button remains (no toggle needed)
+    if (listView) {
+        listView.addEventListener('click', function() {
+            postsContainer.className = 'space-y-6';
+            listView.className = 'px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium';
+            document.querySelectorAll('.post-card').forEach(card => {
+                card.className = 'post-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200';
+            });
+        });
+    }
+
+    // Voting functionality
+    document.querySelectorAll('.upvote-post, .downvote-post').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const postId = this.dataset.postId;
+            const isUpvote = this.classList.contains('upvote-post');
+            const voteType = isUpvote ? 'upvote' : 'downvote';
+            const voteContainer = this.closest('.flex.items-center.space-x-1');
+            const upvoteBtn = voteContainer.querySelector('.upvote-post');
+            const downvoteBtn = voteContainer.querySelector('.downvote-post');
+            const voteCount = voteContainer.querySelector('.vote-count');
+            
+            // Make API call to vote
+            fetch(`/api/vote/post/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: voteType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update vote count (net score)
+                    if (voteCount) voteCount.textContent = data.upvotes - data.downvotes;
+                    
+                    // Update button states based on action
+                    if (data.action === 'add' || data.action === 'change') {
+                        // Clear both buttons first
+                        upvoteBtn.classList.remove('voted', 'text-green-500');
+                        upvoteBtn.classList.add('text-gray-400');
+                        downvoteBtn.classList.remove('voted', 'text-red-500');
+                        downvoteBtn.classList.add('text-gray-400');
+                        
+                        // Highlight the clicked button
+                        if (voteType === 'upvote') {
+                            upvoteBtn.classList.add('voted', 'text-green-500');
+                            upvoteBtn.classList.remove('text-gray-400');
+                        } else {
+                            downvoteBtn.classList.add('voted', 'text-red-500');
+                            downvoteBtn.classList.remove('text-gray-400');
+                        }
+                    } else if (data.action === 'remove') {
+                        // Remove highlighting from both buttons
+                        upvoteBtn.classList.remove('voted', 'text-green-500');
+                        upvoteBtn.classList.add('text-gray-400');
+                        downvoteBtn.classList.remove('voted', 'text-red-500');
+                        downvoteBtn.classList.add('text-gray-400');
+                    }
+                    
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Error recording vote', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error recording vote', 'error');
+            });
+        });
+    });
+
+    // Like functionality
+    document.querySelectorAll('.like-post').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const postId = this.dataset.postId;
+            const icon = this.querySelector('svg');
+            const likeCount = this.parentNode.querySelector('.like-count');
+            
+            // Make API call to like/unlike
+            fetch(`/api/like/post/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update like count
+                    if (likeCount) likeCount.textContent = data.likes;
+                    
+                    // Update button state based on action
+                    if (data.action === 'like') {
+                        this.classList.add('liked', 'text-red-500');
+                        this.classList.remove('text-gray-400');
+                        icon.classList.add('fill-current');
+                    } else {
+                        this.classList.remove('liked', 'text-red-500');
+                        this.classList.add('text-gray-400');
+                        icon.classList.remove('fill-current');
+                    }
+                    
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Error recording like', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error recording like', 'error');
+            });
+        });
+    });
+
+    // Bookmark functionality
+    document.querySelectorAll('.bookmark-post').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!'{{ current_user.is_authenticated }}') {
+                window.location.href = "{{ url_for('login', next=request.url) }}";
+                return;
+            }
+            const postId = this.dataset.postId;
+            const checkbox = this.querySelector('input[type="checkbox"]');
+
+            fetch(`/api/bookmark/post/${postId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ url_for('login', next=request.url) }}";
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (checkbox) checkbox.checked = data.action === 'bookmark';
+                    showNotification(data.message, 'success');
+                } else if (data) {
+                    showNotification(data.message || 'Error bookmarking post', 'error');
+                }
+            })
+            .catch(() => showNotification('Error bookmarking post. Please try again.', 'error'));
+        });
+    });
+
+                   // View post functionality
+      document.querySelectorAll('.view-post').forEach(btn => {
+          btn.addEventListener('click', function() {
+              const postId = this.dataset.postId;
+              const postCard = this.closest('.post-card');
+              
+              // Show loading state
+              const modal = document.getElementById('postDetailModal');
+              modal.querySelector('h2').textContent = 'Loading...';
+              modal.querySelector('.post-content').textContent = 'Loading post content...';
+              modal.classList.remove('hidden');
+              
+              // Set up event delegation for comment interactions now that modal is open
+              attachCommentEventListeners();
+              
+                                                   // Set current post ID for comment functionality
+                   currentPostId = postId;
+                   
+                   // Fetch full post data from API
+                   fetch(`/api/post/${postId}`)
+                       .then(response => response.json())
+                       .then(postData => {
+                           // Update modal content with full data
+                           modal.querySelector('h2').textContent = postData.title;
+                           modal.querySelector('.post-content').textContent = postData.content;
+                           modal.querySelector('.post-author').textContent = postData.author.username;
+                           modal.querySelector('.post-date').textContent = postData.created_at;
+                           modal.querySelector('.post-upvotes').textContent = postData.upvotes;
+                           modal.querySelector('.post-comments').textContent = postData.comments;
+                           
+                           // Update tags
+                           const tagsContainer = modal.querySelector('.post-tags');
+                           tagsContainer.innerHTML = '';
+                           postData.tags.forEach(tag => {
+                               const tagElement = document.createElement('span');
+                               tagElement.className = 'px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-700';
+                               tagElement.textContent = tag;
+                               tagsContainer.appendChild(tagElement);
+                           });
+                           
+                           // Load comments for this post
+                           loadComments(postId);
+                       })
+                  .catch(error => {
+                      console.error('Error fetching post:', error);
+                      modal.querySelector('h2').textContent = 'Error';
+                      modal.querySelector('.post-content').textContent = 'Failed to load post content.';
+                  });
+          });
+      });
+
+    // Post detail modal
+    const postDetailModal = document.getElementById('postDetailModal');
+    const closePostModal = document.getElementById('closePostModal');
+
+    closePostModal.addEventListener('click', function() {
+        postDetailModal.classList.add('hidden');
+    });
+
+    postDetailModal.addEventListener('click', function(e) {
+        if (e.target === postDetailModal) {
+            postDetailModal.classList.add('hidden');
+        }
+    });
+
+    // Load more functionality
+    const loadMorePosts = document.getElementById('loadMorePosts');
+    if (loadMorePosts) {
+        loadMorePosts.addEventListener('click', function() {
+            this.textContent = 'Loading...';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.textContent = 'Load More Posts';
+                this.disabled = false;
+                showNotification('More posts loaded!', 'info');
+            }, 2000);
+        });
+    }
+
+    // Global variables for comment functionality
+    let currentPostId = null;
+    let currentCommentId = null;
+    
+    // Test function for reply functionality
+    window.testReply = function() {
+        console.log('=== TESTING REPLY FUNCTIONALITY ===');
+        const replyButtons = document.querySelectorAll('.reply-to-comment');
+        const replyForms = document.querySelectorAll('.reply-form');
+        
+        console.log('Reply buttons found:', replyButtons.length);
+        console.log('Reply forms found:', replyForms.length);
+        
+        if (replyButtons.length > 0) {
+            console.log('Testing first reply button...');
+            replyButtons[0].click();
+        } else {
+            console.log('No reply buttons found');
+        }
+    };
+    
+    // Test function to manually show reply form
+    window.showReplyForm = function() {
+        console.log('=== MANUALLY SHOWING REPLY FORM ===');
+        const replyForms = document.querySelectorAll('.reply-form');
+        console.log('Reply forms found:', replyForms.length);
+        
+        if (replyForms.length > 0) {
+            const firstForm = replyForms[0];
+            console.log('Showing first reply form...');
+            firstForm.classList.remove('hidden');
+            console.log('Form classes after show:', firstForm.className);
+            console.log('Form should now be visible');
+        } else {
+            console.log('No reply forms found');
+        }
+    };
+    
+    // Test function to check event delegation
+    window.testEventDelegation = function() {
+        console.log('=== TESTING EVENT DELEGATION ===');
+        const commentsList = document.getElementById('commentsList');
+        console.log('Comments list element:', commentsList);
+        console.log('Event delegation setup flag:', commentsList ? commentsList.hasAttribute('data-event-delegation-setup') : 'No commentsList');
+        
+        // Simulate a click event
+        if (commentsList) {
+            const replyButton = commentsList.querySelector('.reply-to-comment');
+            if (replyButton) {
+                console.log('Found reply button, simulating click...');
+                replyButton.click();
+            } else {
+                console.log('No reply button found in comments list');
+            }
+        }
+    };
+    
+    // Test function to manually set up event delegation
+    window.setupEventDelegation = function() {
+        console.log('=== MANUALLY SETTING UP EVENT DELEGATION ===');
+        attachCommentEventListeners();
+    };
+    
+    // Test function to add basic click listeners to reply buttons
+    window.testReplyButtons = function() {
+        console.log('=== TESTING REPLY BUTTONS ===');
+        const replyButtons = document.querySelectorAll('.reply-to-comment');
+        console.log('Found reply buttons:', replyButtons.length);
+        
+        replyButtons.forEach((btn, index) => {
+            console.log(`Reply button ${index}:`, btn);
+            btn.addEventListener('click', function(e) {
+                console.log('Direct click on reply button!', e.target);
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Try to show the reply form manually
+                const commentId = this.dataset.commentId;
+                const commentElement = this.closest('[data-comment-id]');
+                const replyForm = commentElement ? commentElement.querySelector('.reply-form') : null;
+                
+                console.log('Comment ID:', commentId);
+                console.log('Comment element:', commentElement);
+                console.log('Reply form:', replyForm);
+                
+                if (replyForm) {
+                    replyForm.classList.remove('hidden');
+                    console.log('Reply form should now be visible');
+                }
+            });
+        });
+    };
+    
+    // Simple test function to check if anything is working
+    window.debugReply = function() {
+        console.log('=== DEBUGGING REPLY FUNCTIONALITY ===');
+        alert('Debug function called! Check console for details.');
+        
+        // Check if commentsList exists
+        const commentsList = document.getElementById('commentsList');
+        console.log('Comments list:', commentsList);
+        
+        // Check if there are any reply buttons
+        const replyButtons = document.querySelectorAll('.reply-to-comment');
+        console.log('Reply buttons found:', replyButtons.length);
+        
+        // Check if there are any reply forms
+        const replyForms = document.querySelectorAll('.reply-form');
+        console.log('Reply forms found:', replyForms.length);
+        
+        // Check event delegation setup
+        if (commentsList) {
+            console.log('Event delegation setup:', commentsList.hasAttribute('data-event-delegation-setup'));
+        }
+        
+        // Try to manually show first reply form
+        if (replyForms.length > 0) {
+            console.log('Manually showing first reply form...');
+            replyForms[0].classList.remove('hidden');
+            console.log('First reply form classes:', replyForms[0].className);
+        }
+        
+        // Try to manually click first reply button
+        if (replyButtons.length > 0) {
+            console.log('Manually clicking first reply button...');
+            replyButtons[0].click();
+        }
+    };
+    
+    // Simple test to verify JavaScript is working
+    window.testJS = function() {
+        alert('JavaScript is working!');
+        console.log('JavaScript test successful');
+    };
+    
+    // Manual function to add reply button listeners
+    window.addReplyListeners = function() {
+        console.log('Manually adding reply button listeners...');
+        addReplyButtonListeners();
+    };
+    
+    // Simple global function to show reply form
+    window.showReplyForm = function(commentId) {
+        console.log('showReplyForm called with commentId:', commentId);
+        
+        // Hide all reply forms first
+        document.querySelectorAll('.reply-form').forEach(form => {
+            form.classList.add('hidden');
+        });
+        
+        // Find and show the specific reply form
+        const replyForm = document.querySelector(`.reply-form[data-comment-id="${commentId}"]`);
+        if (replyForm) {
+            replyForm.classList.remove('hidden');
+            console.log('Reply form shown for comment:', commentId);
+            
+            // Focus on the textarea
+            const textarea = replyForm.querySelector('.reply-textarea');
+            if (textarea) {
+                textarea.focus();
+            }
+        } else {
+            console.error('Reply form not found for comment:', commentId);
+        }
+    };
+    
+    // Function to hide reply form
+    window.hideReplyForm = function(commentId) {
+        console.log('hideReplyForm called with commentId:', commentId);
+        const replyForm = document.querySelector(`.reply-form[data-comment-id="${commentId}"]`);
+        if (replyForm) {
+            replyForm.classList.add('hidden');
+            // Clear the textarea
+            const textarea = replyForm.querySelector('.reply-textarea');
+            if (textarea) {
+                textarea.value = '';
+            }
+        }
+    };
+    
+    // Function to post reply
+    window.postReply = function(commentId) {
+        console.log('postReply called with commentId:', commentId);
+        const replyForm = document.querySelector(`.reply-form[data-comment-id="${commentId}"]`);
+        if (!replyForm) {
+            console.error('Reply form not found');
+            return;
+        }
+        
+        const textarea = replyForm.querySelector('.reply-textarea');
+        const replyText = textarea ? textarea.value.trim() : '';
+        
+        if (!replyText) {
+            return;
+        }
+        
+        if (!currentPostId) {
+            return;
+        }
+        
+        // Make API call to post reply
+        fetch(`/api/reply/comment/${commentId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                content: replyText
+            })
+        })
+        .then(response => {
+            if (response.redirected) {
+                return null;
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.success) {
+                // Clear form and hide it
+                textarea.value = '';
+                replyForm.classList.add('hidden');
+                
+                // Reload comments to show the new reply
+                loadComments(currentPostId);
+            }
+        })
+        .catch(error => {
+            console.error('Error posting reply:', error);
+        });
+    };
+    
+    
+    
+
+    // Comment posting functionality
+    const postCommentBtn = document.getElementById('postCommentBtn');
+    const commentTextarea = document.getElementById('commentTextarea');
+    
+    if (postCommentBtn && commentTextarea) {
+        postCommentBtn.addEventListener('click', function() {
+            const commentText = commentTextarea.value.trim();
+            
+            if (!commentText) {
+                showNotification('Please enter a comment', 'warning');
+                return;
+            }
+            
+            if (!currentPostId) {
+                showNotification('No post selected', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const originalText = this.textContent;
+            this.textContent = 'Posting...';
+            this.disabled = true;
+            
+            // Make API call to post comment
+            fetch(`/api/comment/post/${currentPostId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: commentText
+                })
+            })
+            .then(response => {
+                if (response.redirected) {
+                    showNotification('Please login to post comments', 'warning');
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    commentTextarea.value = '';
+                    loadComments(currentPostId);
+                    showNotification('Comment posted successfully!', 'success');
+                } else if (data) {
+                    showNotification(data.message || 'Error posting comment', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error posting comment', 'error');
+            })
+            .finally(() => {
+                this.textContent = originalText;
+                this.disabled = false;
+            });
+        });
+    }
+
+    // Function to load comments for a post
+    function loadComments(postId) {
+        const commentsList = document.getElementById('commentsList');
+        if (!commentsList) return;
+        
+        // Show loading state
+        commentsList.innerHTML = '<div class="text-center py-4 text-gray-500 dark:text-gray-400">Loading comments...</div>';
+        
+        fetch(`/api/comments/post/${postId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.comments) {
+                    renderComments(data.comments);
+                } else {
+                    commentsList.innerHTML = '<div class="text-center py-4 text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading comments:', error);
+                commentsList.innerHTML = '<div class="text-center py-4 text-red-500">Error loading comments</div>';
+            });
+    }
+
+    // Function to render comments
+    function renderComments(comments) {
+        const commentsList = document.getElementById('commentsList');
+        if (!commentsList) return;
+        
+        if (comments.length === 0) {
+            commentsList.innerHTML = '<div class="text-center py-4 text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</div>';
+            return;
+        }
+        
+        const htmlContent = comments.map(comment => `
+            <div class="border-b border-gray-200 dark:border-gray-600 pb-4" data-comment-id="${comment.id}">
+                <div class="flex items-start space-x-3">
+                    <div class="text-xl">${comment.author.avatar || '👤'}</div>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="font-medium text-gray-900 dark:text-white">${comment.author.username}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${formatTimeAgo(comment.created_at)}</span>
+                        </div>
+                        <p class="text-gray-700 dark:text-gray-300 text-sm mb-2">${comment.content}</p>
+                        <div class="flex items-center space-x-4">
+                            <button class="like-comment text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors" data-comment-id="${comment.id}">
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                                <span class="like-count">${comment.likes || 0}</span>
+                            </button>
+                            <button class="reply-to-comment text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-comment-id="${comment.id}" onclick="showReplyForm(${comment.id})">
+                                Reply
+                            </button>
+                        </div>
+                        
+                        <!-- Inline Reply Form (hidden by default) -->
+                        <div class="reply-form mt-3 hidden" data-comment-id="${comment.id}">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                                <textarea 
+                                    class="reply-textarea w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none" 
+                                    placeholder="Write your reply..."
+                                    rows="3"
+                                ></textarea>
+                                <div class="mt-2 flex justify-end space-x-2">
+                                    <button class="cancel-reply px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors" onclick="hideReplyForm(${comment.id})">
+                                        Cancel
+                                    </button>
+                                    <button class="post-reply px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" data-comment-id="${comment.id}" onclick="postReply(${comment.id})">
+                                        Post Reply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- Replies -->
+                        ${comment.replies && comment.replies.length > 0 ? `
+                            <div class="mt-3 ml-6 space-y-3">
+                                ${comment.replies.map(reply => `
+                                    <div class="border-l-2 border-gray-200 dark:border-gray-600 pl-3">
+                                        <div class="flex items-start space-x-2">
+                                            <div class="text-lg">${reply.author.avatar || '👤'}</div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-1">
+                                                    <span class="font-medium text-gray-900 dark:text-white text-sm">${reply.author.username}</span>
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatTimeAgo(reply.created_at)}</span>
+                                                </div>
+                                                <p class="text-gray-700 dark:text-gray-300 text-sm mb-2">${reply.content}</p>
+                                                <button class="like-reply text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors" data-reply-id="${reply.id}">
+                                                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                                    </svg>
+                                                    <span class="like-count">${reply.likes || 0}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        commentsList.innerHTML = htmlContent;
+        
+        console.log('HTML content set, now attaching event listeners...');
+        console.log('Reply buttons in DOM after HTML set:', document.querySelectorAll('.reply-to-comment').length);
+        console.log('Reply forms in DOM after HTML set:', document.querySelectorAll('.reply-form').length);
+        
+        // Add simple click listeners to reply buttons
+        addReplyButtonListeners();
+    }
+
+    // Simple function to add click listeners to reply buttons
+    function addReplyButtonListeners() {
+        console.log('Adding reply button listeners...');
+        const replyButtons = document.querySelectorAll('.reply-to-comment');
+        console.log('Found reply buttons:', replyButtons.length);
+        
+        replyButtons.forEach((button, index) => {
+            // Remove any existing listeners to avoid duplicates
+            button.replaceWith(button.cloneNode(true));
+        });
+        
+        // Re-select buttons after cloning
+        const newReplyButtons = document.querySelectorAll('.reply-to-comment');
+        
+        newReplyButtons.forEach((button, index) => {
+            console.log(`Adding listener to reply button ${index}`);
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('Reply button clicked!');
+                
+                // Find the comment element
+                const commentElement = this.closest('[data-comment-id]');
+                if (!commentElement) {
+                    console.error('Could not find comment element');
+                    return;
+                }
+                
+                // Find the reply form
+                const replyForm = commentElement.querySelector('.reply-form');
+                if (!replyForm) {
+                    console.error('Could not find reply form');
+                    return;
+                }
+                
+                // Hide all other reply forms
+                document.querySelectorAll('.reply-form').forEach(form => {
+                    if (form !== replyForm) {
+                        form.classList.add('hidden');
+                    }
+                });
+                
+                // Show this reply form
+                replyForm.classList.remove('hidden');
+                console.log('Reply form should now be visible');
+                
+                // Focus on the textarea
+                const textarea = replyForm.querySelector('.reply-textarea');
+                if (textarea) {
+                    textarea.focus();
+                }
+            });
+        });
+        
+        console.log('Reply button listeners added successfully');
+    }
+
+    // Function to attach event listeners to comment elements
+    function attachCommentEventListeners() {
+        console.log('Attaching comment event listeners...');
+        console.log('Reply buttons found:', document.querySelectorAll('.reply-to-comment').length);
+        console.log('Reply forms found:', document.querySelectorAll('.reply-form').length);
+        
+        const commentsList = document.getElementById('commentsList');
+        if (!commentsList) {
+            console.error('Comments list container not found');
+            return;
+        }
+        
+        // Only set up event delegation once per commentsList element
+        if (commentsList.hasAttribute('data-event-delegation-setup')) {
+            console.log('Event delegation already set up for this comments list, skipping...');
+            return;
+        }
+        
+        console.log('Setting up event delegation for comments list...');
+        
+        // Single event listener for all comment interactions
+        commentsList.addEventListener('click', function(e) {
+            console.log('Click detected on comments list:', e.target);
+            
+            // Handle comment likes
+            if (e.target.closest('.like-comment')) {
+                e.preventDefault();
+                const btn = e.target.closest('.like-comment');
+                const commentId = btn.dataset.commentId;
+                const icon = btn.querySelector('svg');
+                const likeCount = btn.querySelector('.like-count');
+                
+                console.log('Like button clicked for comment:', commentId);
+                
+                // Make API call to like/unlike comment
+                fetch(`/api/like/comment/${commentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        showNotification('Please login to like comments', 'warning');
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        // Update like count
+                        if (likeCount) likeCount.textContent = data.likes;
+                        
+                        // Update button state based on action
+                        if (data.action === 'like') {
+                            btn.classList.add('liked', 'text-red-500');
+                            btn.classList.remove('text-gray-500', 'dark:text-gray-400');
+                            icon.classList.add('fill-current');
+                        } else {
+                            btn.classList.remove('liked', 'text-red-500');
+                            btn.classList.add('text-gray-500', 'dark:text-gray-400');
+                            icon.classList.remove('fill-current');
+                        }
+                        
+                        showNotification(data.message, 'success');
+                    } else if (data) {
+                        showNotification('Error recording like', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error recording like', 'error');
+                });
+            }
+            
+            // Handle reply button clicks
+            else if (e.target.closest('.reply-to-comment')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const btn = e.target.closest('.reply-to-comment');
+                console.log('Reply button clicked!', btn);
+                
+                const commentId = btn.dataset.commentId;
+                const commentElement = btn.closest('[data-comment-id]');
+                
+                console.log('Comment ID:', commentId);
+                console.log('Comment element:', commentElement);
+                
+                if (!commentElement) {
+                    console.error('Could not find comment element');
+                    return;
+                }
+                
+                // Find the reply form for this comment
+                const replyForm = commentElement.querySelector('.reply-form');
+                console.log('Reply form found:', replyForm);
+                
+                if (!replyForm) {
+                    console.error('Reply form not found for comment:', commentId);
+                    return;
+                }
+                
+                const replyTextarea = replyForm.querySelector('.reply-textarea');
+                console.log('Reply textarea found:', replyTextarea);
+                
+                // Hide any other open reply forms
+                document.querySelectorAll('.reply-form').forEach(form => {
+                    if (form !== replyForm) {
+                        form.classList.add('hidden');
+                    }
+                });
+                
+                // Show this reply form
+                console.log('Before showing form - classes:', replyForm.className);
+                replyForm.classList.remove('hidden');
+                console.log('After showing form - classes:', replyForm.className);
+                
+                if (replyTextarea) {
+                    replyTextarea.focus();
+                    console.log('Focused on textarea');
+                }
+                
+                console.log('Reply form should now be visible');
+            }
+            
+            // Handle cancel reply
+            else if (e.target.closest('.cancel-reply')) {
+                e.preventDefault();
+                const btn = e.target.closest('.cancel-reply');
+                const replyForm = btn.closest('.reply-form');
+                const replyTextarea = replyForm.querySelector('.reply-textarea');
+                
+                // Clear text and hide form
+                replyTextarea.value = '';
+                replyForm.classList.add('hidden');
+                console.log('Reply cancelled');
+            }
+            
+            // Handle post reply
+            else if (e.target.closest('.post-reply')) {
+                e.preventDefault();
+                const btn = e.target.closest('.post-reply');
+                const commentId = btn.dataset.commentId;
+                const replyForm = btn.closest('.reply-form');
+                const replyTextarea = replyForm.querySelector('.reply-textarea');
+                const replyText = replyTextarea.value.trim();
+                
+                console.log('Post reply clicked for comment:', commentId);
+                
+                if (!replyText) {
+                    showNotification('Please enter a reply', 'warning');
+                    return;
+                }
+                
+                if (!currentPostId) {
+                    showNotification('No post selected', 'error');
+                    return;
+                }
+                
+                // Disable button and show loading
+                const originalText = btn.textContent;
+                btn.textContent = 'Posting...';
+                btn.disabled = true;
+                
+                // Make API call to post reply
+                fetch(`/api/reply/comment/${commentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: replyText
+                    })
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        showNotification('Please login to post replies', 'warning');
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        // Clear form and hide it
+                        replyTextarea.value = '';
+                        replyForm.classList.add('hidden');
+                        
+                        // Reload comments to show the new reply
+                        loadComments(currentPostId);
+                        showNotification('Reply posted successfully!', 'success');
+                    } else if (data) {
+                        showNotification(data.message || 'Error posting reply', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error posting reply', 'error');
+                })
+                .finally(() => {
+                    // Re-enable button
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                });
+            }
+        });
+        
+        // Mark this commentsList as having event delegation set up
+        commentsList.setAttribute('data-event-delegation-setup', 'true');
+        console.log('Event delegation setup complete');
+
+        // Reply like functionality
+        document.querySelectorAll('.like-reply').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const replyId = this.dataset.replyId;
+                const icon = this.querySelector('svg');
+                const likeCount = this.querySelector('.like-count');
+                
+                // Make API call to like/unlike reply
+                fetch(`/api/like/reply/${replyId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update like count
+                        if (likeCount) likeCount.textContent = data.likes;
+                        
+                        // Update button state based on action
+                        if (data.action === 'like') {
+                            this.classList.add('liked', 'text-red-500');
+                            this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                            icon.classList.add('fill-current');
+                        } else {
+                            this.classList.remove('liked', 'text-red-500');
+                            this.classList.add('text-gray-500', 'dark:text-gray-400');
+                            icon.classList.remove('fill-current');
+                        }
+                        
+                        showNotification(data.message, 'success');
+                    } else {
+                        showNotification('Error recording like', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error recording like', 'error');
+                });
+            });
+        });
+    }
+
+
+    // Helper function to format time ago
+    function formatTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        return date.toLocaleDateString();
+    }
+
+         // Function to add new post to the page
+     function addNewPostToPage(postId, title, content, tags) {
+         const postsContainer = document.getElementById('postsContainer');
+         const currentUser = '{{ current_user.username if current_user.is_authenticated else "" }}';
+         const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+         
+         // Parse tags
+         const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+         
+         // Create new post HTML
+         const newPostHTML = `
+             <div class="post-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200" data-post-id="${postId}">
+                 <!-- Post Header -->
+                 <div class="flex items-start space-x-3 mb-4">
+                     <div class="text-2xl">👨‍💻</div>
+                     <div class="flex-1">
+                         <div class="flex items-center space-x-2">
+                             <h3 class="font-semibold text-gray-900 dark:text-white">${currentUser}</h3>
+                         </div>
+                         <p class="text-xs text-gray-500 dark:text-gray-400">${currentDate}</p>
+                     </div>
+                     <button class="text-gray-400 hover:text-red-500 transition-colors bookmark-post" data-post-id="${postId}">
+                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                         </svg>
+                     </button>
+                 </div>
+                 
+                 <!-- Post Content -->
+                 <h4 class="font-semibold text-gray-900 dark:text-white mb-3 text-lg">${title}</h4>
+                 <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">${content.substring(0, 200)}${content.length > 200 ? '...' : ''}</p>
+                 
+                 <!-- Post Tags -->
+                 <div class="flex flex-wrap gap-2 mb-4">
+                     ${tagArray.map(tag => `<span class="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-700">${tag}</span>`).join('')}
+                 </div>
+                 
+                                   <!-- Post Stats -->
+                  <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-600" data-debug="post-${postId}-stats">
+                      <div class="flex items-center space-x-6">
+                          <div class="flex items-center space-x-1">
+                              <button class="upvote-post text-gray-400 hover:text-green-500 transition-colors p-1 rounded" data-post-id="${postId}">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                  </svg>
+                              </button>
+                              <span class="text-sm font-semibold text-gray-900 dark:text-white vote-count">0</span>
+                              <button class="downvote-post text-gray-400 hover:text-red-500 transition-colors p-1 rounded" data-post-id="${postId}">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                  </svg>
+                              </button>
+                          </div>
+                          <div class="flex items-center space-x-2">
+                              <button class="like-post text-gray-400 hover:text-red-500 transition-colors p-1 rounded" data-post-id="${postId}">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                  </svg>
+                              </button>
+                              <span class="text-sm font-medium text-gray-600 dark:text-gray-400 like-count">0</span>
+                          </div>
+                          <div class="flex items-center space-x-2">
+                              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                              </svg>
+                              <span class="text-sm font-medium text-gray-600 dark:text-gray-400">0</span>
+                          </div>
+                      </div>
+                     <button class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold view-post px-3 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" data-post-id="${postId}">
+                         View Post →
+                     </button>
+                 </div>
+             </div>
+         `;
+         
+         // Add new post to the beginning of the container
+         postsContainer.insertAdjacentHTML('afterbegin', newPostHTML);
+         
+         // Re-attach event listeners to the new post
+         const newPost = postsContainer.firstElementChild;
+         attachPostEventListeners(newPost);
+     }
+     
+     // Function to attach event listeners to a post
+     function attachPostEventListeners(postElement) {
+         // Upvote functionality
+         const upvoteBtn = postElement.querySelector('.upvote-post');
+         if (upvoteBtn) {
+             upvoteBtn.addEventListener('click', function() {
+                 const postId = this.dataset.postId;
+                 
+                 // Make API call to vote
+                 fetch(`/api/vote/post/${postId}`, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     body: JSON.stringify({
+                         type: 'upvote'
+                     })
+                 })
+                 .then(response => response.json())
+                 .then(data => {
+                     if (data.success) {
+                         const voteCount = this.parentNode.querySelector('span');
+                         if (voteCount) voteCount.textContent = data.upvotes;
+                         
+                         if (data.action === 'add' || data.action === 'change') {
+                             this.classList.add('voted', 'text-green-500');
+                             this.classList.remove('text-gray-400');
+                         } else if (data.action === 'remove') {
+                             this.classList.remove('voted', 'text-green-500');
+                             this.classList.add('text-gray-400');
+                         }
+                         
+                         showNotification(data.message, 'success');
+                     } else {
+                         showNotification('Error recording vote', 'error');
+                     }
+                 })
+                 .catch(error => {
+                     showNotification('Error recording vote', 'error');
+                 });
+             });
+         }
+         
+         // Bookmark functionality
+         const bookmarkBtn = postElement.querySelector('.bookmark-post');
+         if (bookmarkBtn) {
+             bookmarkBtn.addEventListener('click', function() {
+                 const postId = this.dataset.postId;
+                 const icon = this.querySelector('svg');
+                 
+                 if (this.classList.contains('bookmarked')) {
+                     this.classList.remove('bookmarked');
+                     icon.classList.remove('text-red-500', 'fill-current');
+                     icon.classList.add('text-gray-400');
+                 } else {
+                     this.classList.add('bookmarked');
+                     icon.classList.add('text-red-500', 'fill-current');
+                     icon.classList.remove('text-gray-400');
+                 }
+                 
+                 showNotification('Post bookmarked!', 'success');
+             });
+         }
+         
+                             // Like functionality
+          const likeBtn = postElement.querySelector('.like-post');
+          if (likeBtn) {
+              likeBtn.addEventListener('click', function() {
+                  const postId = this.dataset.postId;
+                  const icon = this.querySelector('svg');
+                  const likeCount = this.parentNode.querySelector('.like-count');
+                  
+                  // Make API call to like/unlike
+                  fetch(`/api/like/post/${postId}`, {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                      }
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          // Update like count
+                          if (likeCount) likeCount.textContent = data.likes;
+                          
+                          // Update button state based on action
+                          if (data.action === 'like') {
+                              this.classList.add('liked', 'text-red-500');
+                              this.classList.remove('text-gray-400');
+                              icon.classList.add('fill-current');
+                          } else {
+                              this.classList.remove('liked', 'text-red-500');
+                              this.classList.add('text-gray-400');
+                              icon.classList.remove('fill-current');
+                          }
+                          
+                          showNotification(data.message, 'success');
+                      } else {
+                          showNotification('Error recording like', 'error');
+                      }
+                  })
+                  .catch(error => {
+                      showNotification('Error recording like', 'error');
+                  });
+              });
+          }
+          
+          // View post functionality
+           const viewBtn = postElement.querySelector('.view-post');
+           if (viewBtn) {
+               viewBtn.addEventListener('click', function() {
+                   const postId = this.dataset.postId;
+                   
+                   // Show loading state
+                   const modal = document.getElementById('postDetailModal');
+                   modal.querySelector('h2').textContent = 'Loading...';
+                   modal.querySelector('.post-content').textContent = 'Loading post content...';
+                   modal.classList.remove('hidden');
+                   
+                   // Set up event delegation for comment interactions now that modal is open
+                   attachCommentEventListeners();
+                   
+                   // Set current post ID for comment functionality
+                   currentPostId = postId;
+                   
+                   // Fetch full post data from API
+                   fetch(`/api/post/${postId}`)
+                       .then(response => response.json())
+                       .then(postData => {
+                           // Update modal content with full data
+                           modal.querySelector('h2').textContent = postData.title;
+                           modal.querySelector('.post-content').textContent = postData.content;
+                           modal.querySelector('.post-author').textContent = postData.author.username;
+                           modal.querySelector('.post-date').textContent = postData.created_at;
+                           modal.querySelector('.post-upvotes').textContent = postData.upvotes;
+                           modal.querySelector('.post-comments').textContent = postData.comments;
+                           
+                           // Update tags
+                           const tagsContainer = modal.querySelector('.post-tags');
+                           tagsContainer.innerHTML = '';
+                           postData.tags.forEach(tag => {
+                               const tagElement = document.createElement('span');
+                               tagElement.className = 'px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-700';
+                               tagElement.textContent = tag;
+                               tagsContainer.appendChild(tagElement);
+                           });
+                           
+                           // Load comments for this post
+                           loadComments(postId);
+                       })
+                       .catch(error => {
+                           console.error('Error fetching post:', error);
+                           modal.querySelector('h2').textContent = 'Error';
+                           modal.querySelector('.post-content').textContent = 'Failed to load post content.';
+                       });
+               });
+           }
+     }
+     
+     // Notification helper
+     function showNotification(message, type) {
+         const notification = document.createElement('div');
+         let bgColor = 'bg-blue-500';
+         if (type === 'success') bgColor = 'bg-green-500';
+         else if (type === 'error') bgColor = 'bg-red-500';
+         else if (type === 'warning') bgColor = 'bg-yellow-500';
+         
+         notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium z-50 ${bgColor}`;
+         notification.textContent = message;
+         
+         document.body.appendChild(notification);
+         
+         setTimeout(() => {
+             notification.remove();
+         }, 3000);
+     }
+
+    // Search and Filter Functionality
+    const searchPosts = document.getElementById('searchPosts');
+    const sortPosts = document.getElementById('sortPosts');
+    const clearFilters = document.getElementById('clearFilters');
+    const showMyPosts = document.getElementById('showMyPosts');
+
+    // Filter Change Handler
+    function updateCommunityFilters(filterType = 'all') {
+        const search = searchPosts.value;
+        const sort = sortPosts.value;
+        const tab = 'posts'; // Default to posts tab
+
+        // Build query string
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (sort !== 'popular') params.append('sort', sort);
+        if (filterType !== 'all') params.append('filter', filterType);
+        params.append('tab', tab);
+
+        // Update URL and reload
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = newUrl;
+    }
+
+    // Add event listeners for search and filters
+    if (searchPosts) {
+        searchPosts.addEventListener('input', function() {
+            // Debounce search input
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => updateCommunityFilters(), 500);
+        });
+    }
+
+    if (sortPosts) {
+        sortPosts.addEventListener('change', () => updateCommunityFilters());
+    }
+
+    if (clearFilters) {
+        clearFilters.addEventListener('click', function() {
+            window.location.href = window.location.pathname + '?tab=posts';
+        });
+    }
+
+    if (showMyPosts) {
+        showMyPosts.addEventListener('click', function() {
+            showNotification('Showing your posts...', 'info');
+            updateCommunityFilters('my_posts');
+        });
+    }
+
+    // Edit Post Functionality
+    document.querySelectorAll('.edit-post-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const postId = this.dataset.postId;
+            const title = this.dataset.postTitle;
+            const content = this.dataset.postContent;
+            
+            // Populate edit form
+            document.getElementById('editPostId').value = postId;
+            document.getElementById('editPostTitle').value = title;
+            document.getElementById('editPostContent').value = content;
+            
+            // Show edit modal
+            document.getElementById('editPostModal').classList.remove('hidden');
+        });
+    });
+
+    // Delete Post Functionality
+    document.querySelectorAll('.delete-post-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const postId = this.dataset.postId;
+            const title = this.dataset.postTitle;
+            
+            if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+                fetch(`/api/delete/post/${postId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(async response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return null;
+                    }
+                    const isJson = response.headers.get('content-type') && response.headers.get('content-type').includes('application/json');
+                    return isJson ? response.json() : null;
+                })
+                .then(data => {
+                    if (!data) {
+                        showNotification('Please login to delete posts', 'warning');
+                        return;
+                    }
+                    if (data.success) {
+                        showNotification('Post deleted successfully!', 'success');
+                        setTimeout(() => { window.location.reload(); }, 800);
+                    } else {
+                        showNotification(data.message || 'Error deleting post', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    showNotification('Error deleting post. Please try again.', 'error');
+                });
+            }
+        });
+    });
+
+    // Edit Post Modal Controls
+    const editPostModal = document.getElementById('editPostModal');
+    const closeEditPostModal = document.getElementById('closeEditPostModal');
+    const cancelEditPost = document.getElementById('cancelEditPost');
+    const editPostForm = document.getElementById('editPostForm');
+
+    if (closeEditPostModal) {
+        closeEditPostModal.addEventListener('click', function() {
+            editPostModal.classList.add('hidden');
+        });
+    }
+
+    if (cancelEditPost) {
+        cancelEditPost.addEventListener('click', function() {
+            editPostModal.classList.add('hidden');
+        });
+    }
+
+    if (editPostModal) {
+        editPostModal.addEventListener('click', function(e) {
+            if (e.target === editPostModal) {
+                editPostModal.classList.add('hidden');
+            }
+        });
+    }
+
+    // Edit Post Form Submission
+    if (editPostForm) {
+        editPostForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(editPostForm);
+            const data = Object.fromEntries(formData);
+            
+            const submitBtn = editPostForm.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Updating...';
+            submitBtn.disabled = true;
+            
+            fetch(`/api/edit/post/${data.post_id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: data.title,
+                    content: data.content
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    editPostModal.classList.add('hidden');
+                    showNotification('Post updated successfully!', 'success');
+                    setTimeout(() => { window.location.reload(); }, 1000);
+                } else {
+                    showNotification(data.message || 'Error updating post', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Update error:', error);
+                showNotification('Error updating post. Please try again.', 'error');
+            })
+            .finally(() => {
+                submitBtn.textContent = 'Update Post';
+                submitBtn.disabled = false;
+            });
+        });
+    }
+    
+    // Event delegation will be set up when the post modal is opened
+    // since the commentsList element is inside the modal
+
+    // Full Leaderboard Modal
+    const viewFullLeaderboardBtn = document.getElementById('viewFullLeaderboard');
+    const fullLeaderboardModal = document.getElementById('fullLeaderboardModal');
+    const closeFullLeaderboardModal = document.getElementById('closeFullLeaderboardModal');
+    const leaderboardContent = document.getElementById('leaderboardContent');
+    const leaderboardPagination = document.getElementById('leaderboardPagination');
+    let currentPage = 1;
+
+    if (viewFullLeaderboardBtn) {
+        viewFullLeaderboardBtn.addEventListener('click', function() {
+            fullLeaderboardModal.classList.remove('hidden');
+            // Trigger zoom-in animation
+            setTimeout(() => {
+                const modalContent = document.getElementById('modalContent');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            loadLeaderboard(1);
+        });
+    }
+
+    function closeModal() {
+        const modalContent = document.getElementById('modalContent');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            fullLeaderboardModal.classList.add('hidden');
+        }, 300);
+    }
+
+    if (closeFullLeaderboardModal) {
+        closeFullLeaderboardModal.addEventListener('click', closeModal);
+    }
+
+    if (fullLeaderboardModal) {
+        fullLeaderboardModal.addEventListener('click', function(e) {
+            if (e.target === fullLeaderboardModal) {
+                closeModal();
+            }
+        });
+    }
+
+    function loadLeaderboard(page) {
+        currentPage = page;
+        leaderboardContent.innerHTML = '<div class="flex justify-center items-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
+        
+        fetch(`/api/leaderboard?page=${page}&per_page=20`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderLeaderboard(data.leaderboard);
+                    renderPagination(data.pagination);
+                } else {
+                    leaderboardContent.innerHTML = '<div class="text-center py-8 text-red-600">Error loading leaderboard</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading leaderboard:', error);
+                leaderboardContent.innerHTML = '<div class="text-center py-8 text-red-600">Error loading leaderboard</div>';
+            });
+    }
+
+    function renderLeaderboard(users) {
+        if (users.length === 0) {
+            leaderboardContent.innerHTML = '<div class="text-center py-8 text-gray-500">No users found</div>';
+            return;
+        }
+
+        const html = users.map(user => {
+            const rankClass = user.rank <= 3 ? 
+                (user.rank === 1 ? 'from-yellow-400 to-yellow-600' : 
+                 user.rank === 2 ? 'from-gray-300 to-gray-500' : 
+                 'from-orange-400 to-orange-600') : 
+                'from-blue-400 to-blue-600';
+            
+            const rankIcon = user.rank === 1 ? '🥇' : user.rank === 2 ? '🥈' : user.rank === 3 ? '🥉' : '';
+            
+            const badgesHtml = user.badges && user.badges.length > 0 ? 
+                user.badges.map(badge => `<span class="inline-block px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-full">${badge}</span>`).join(' ') : 
+                '';
+
+            return `
+                <div class="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-r ${rankClass} rounded-full text-white font-bold text-lg relative">
+                        ${rankIcon}
+                        <span class="absolute -bottom-1 -right-1 text-xs bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full w-5 h-5 flex items-center justify-center">${user.rank}</span>
+                    </div>
+                    <div class="text-3xl">${user.avatar}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <h4 class="font-semibold text-gray-900 dark:text-white truncate">${user.username}</h4>
+                            <span class="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded-full">Level ${user.level}</span>
+                        </div>
+                        <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            <span>${user.points.toLocaleString()} points</span>
+                            <span>${user.posts_count} posts</span>
+                            <span>${user.prompts_count} prompts</span>
+                        </div>
+                        ${badgesHtml ? `<div class="flex flex-wrap gap-1 mt-2">${badgesHtml}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        leaderboardContent.innerHTML = html;
+    }
+
+    function renderPagination(pagination) {
+        if (pagination.pages <= 1) {
+            leaderboardPagination.innerHTML = '';
+            return;
+        }
+
+        let paginationHtml = '<div class="flex items-center justify-center space-x-2 mt-6">';
+        
+        // Previous button
+        if (pagination.has_prev) {
+            paginationHtml += `<button onclick="loadLeaderboard(${pagination.page - 1})" class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Previous</button>`;
+        }
+        
+        // Page numbers
+        const startPage = Math.max(1, pagination.page - 2);
+        const endPage = Math.min(pagination.pages, pagination.page + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === pagination.page;
+            paginationHtml += `<button onclick="loadLeaderboard(${i})" class="px-3 py-2 text-sm ${isActive ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'} rounded-lg transition-colors">${i}</button>`;
+        }
+        
+        // Next button
+        if (pagination.has_next) {
+            paginationHtml += `<button onclick="loadLeaderboard(${pagination.page + 1})" class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Next</button>`;
+        }
+        
+        paginationHtml += '</div>';
+        leaderboardPagination.innerHTML = paginationHtml;
+    }
+});
+</script>
+{% endblock %}

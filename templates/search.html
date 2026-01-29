@@ -1,0 +1,710 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, follow">{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Search Results</h1>
+                    {% if query %}
+                    <p class="text-lg text-gray-600 dark:text-gray-300">
+                        Found {{ results.total_results }} results for "<span class="font-semibold text-blue-600 dark:text-blue-400">{{ query }}</span>"
+                    </p>
+                    {% else %}
+                    <p class="text-lg text-gray-600 dark:text-gray-300">Search across tools, prompts, and community posts</p>
+                    {% endif %}
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('categories') }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                        Browse All Tools
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Search Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+            <form method="GET" action="{{ url_for('search') }}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Search Input -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search Query</label>
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input
+                                name="q"
+                                type="text"
+                                placeholder="Search tools, prompts, posts..."
+                                value="{{ query }}"
+                                class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Search Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search Type</label>
+                        <select name="type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                            <option value="all" {% if search_type == 'all' %}selected{% endif %}>All</option>
+                            <option value="tools" {% if search_type == 'tools' %}selected{% endif %}>Tools</option>
+                            <option value="prompts" {% if search_type == 'prompts' %}selected{% endif %}>Prompts</option>
+                            <option value="posts" {% if search_type == 'posts' %}selected{% endif %}>Posts</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort By -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort By</label>
+                        <select name="sort" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                            <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>Relevance</option>
+                            <option value="popularity" {% if sort_by == 'popularity' %}selected{% endif %}>Popularity</option>
+                            <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Rating</option>
+                            <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name</option>
+                            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Category Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                        <select name="category" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                            <option value="All">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.name }}" {% if category_filter == category.name %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Pricing Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pricing</label>
+                        <select name="pricing" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                            <option value="All">All Pricing</option>
+                            <option value="Free" {% if pricing_filter == 'Free' %}selected{% endif %}>Free</option>
+                            <option value="Freemium" {% if pricing_filter == 'Freemium' %}selected{% endif %}>Freemium</option>
+                            <option value="Paid" {% if pricing_filter == 'Paid' %}selected{% endif %}>Paid</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                            Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results -->
+        {% if query %}
+            <!-- Tools Results -->
+            {% if results.tools %}
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Tools ({{ results.tools|length }})</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for tool in results.tools %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain={{ tool.website|domain_from_url }}"
+                                     onerror="this.onerror=null;this.src='https://icon.horse/icon/{{ tool.website|domain_from_url }}'"
+                                     alt="{{ tool.name }} logo" class="w-10 h-10 object-contain" loading="lazy">
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <span class="text-yellow-400">★</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ "%.1f"|format(tool.rating) }}</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ tool.name }}</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">{{ tool.short_description }}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded-full">
+                                    {{ tool.category }}
+                                </span>
+                                <span class="px-2 py-1 
+                                    {% if tool.pricing == 'Free' %}bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400
+                                    {% elif tool.pricing == 'Freemium' %}bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400
+                                    {% else %}bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400{% endif %} text-xs rounded-full">
+                                    {{ tool.pricing }}
+                                </span>
+                            </div>
+                            <a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Prompts Results -->
+            {% if results.prompts %}
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Prompts ({{ results.prompts|length }})</h2>
+                <div class="space-y-4">
+                    {% for prompt in results.prompts %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">
+                                    {% if prompt.category == 'Writing' %}✍️
+                                    {% elif prompt.category == 'Coding' %}💻
+                                    {% elif prompt.category == 'Design' %}🎨
+                                    {% elif prompt.category == 'Marketing' %}📢
+                                    {% else %}🤖{% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ prompt.title }}</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">for {{ prompt.tool }} • {{ prompt.category }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-500 dark:text-gray-400 like-count">👍 {{ prompt.likes or prompt.upvotes or 0 }}</span>
+                                {% if current_user.is_authenticated %}
+                                <button class="like-prompt text-gray-400 hover:text-red-500 transition-colors" data-prompt-id="{{ prompt.id }}" title="Like this prompt">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </button>
+                                {% else %}
+                                <button class="like-prompt-login text-gray-400 hover:text-red-500 transition-colors" title="Login to like this prompt" data-login-url="{{ url_for('login') }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="text-gray-700 dark:text-gray-300 text-sm mb-3">{{ prompt.content[:200] }}{% if prompt.content|length > 200 %}...{% endif %}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">by {{ prompt.author.username }}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">•</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ prompt.created_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                            <button class="test-prompt px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors" 
+                                    data-prompt-id="{{ prompt.id }}" 
+                                    data-prompt-content="{{ prompt.content }}"
+                                    data-tool="{{ prompt.tool }}">
+                                Test Prompt
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Posts Results -->
+            {% if results.posts %}
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Community Posts ({{ results.posts|length }})</h2>
+                <div class="space-y-4">
+                    {% for post in results.posts %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">{{ post.author.avatar }}</div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ post.title }}</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">by {{ post.author.username }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">👍 {{ post.upvotes or 0 }}</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">💬 {{ post.comments or 0 }}</span>
+                                {% if current_user.is_authenticated %}
+                                <button class="like-post text-gray-400 hover:text-red-500 transition-colors" data-post-id="{{ post.id }}" title="Like this post">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </button>
+                                {% else %}
+                                <button class="like-post-login text-gray-400 hover:text-red-500 transition-colors" title="Login to like this post" data-login-url="{{ url_for('login') }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="text-gray-700 dark:text-gray-300 text-sm mb-3">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ post.created_at.strftime('%b %d, %Y') }}</span>
+                                {% if post.tags %}
+                                <div class="flex items-center space-x-1">
+                                    {% for tag in post.tags|from_json %}
+                                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                Read More
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- No Results -->
+            {% if results.total_results == 0 %}
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">🔍</div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No results found</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Try adjusting your search terms or filters</p>
+                <div class="flex items-center justify-center space-x-4">
+                    <a href="{{ url_for('categories') }}" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        Browse All Tools
+                    </a>
+                    <a href="{{ url_for('prompts') }}" class="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                        Browse Prompts
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Search Tips -->
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">🔍</div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Start your search</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Search for AI tools, prompts, or community posts</p>
+                
+                <!-- Popular Searches -->
+                <div class="max-w-2xl mx-auto">
+                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Popular Searches</h4>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <a href="{{ url_for('search', q='ChatGPT', type='tools') }}" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            ChatGPT
+                        </a>
+                        <a href="{{ url_for('search', q='image generation', type='tools') }}" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Image Generation
+                        </a>
+                        <a href="{{ url_for('search', q='coding assistant', type='tools') }}" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Coding Assistant
+                        </a>
+                        <a href="{{ url_for('search', q='marketing', type='prompts') }}" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Marketing Prompts
+                        </a>
+                        <a href="{{ url_for('search', q='writing', type='tools') }}" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Writing Tools
+                        </a>
+                        <a href="{{ url_for('search', q='productivity', type='all') }}" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Productivity
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer" class="fixed top-4 right-4 z-50"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time search suggestions
+    const searchInput = document.querySelector('input[name="q"]');
+    const suggestionsContainer = document.createElement('div');
+    suggestionsContainer.className = 'absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto hidden';
+    searchInput.parentNode.style.position = 'relative';
+    searchInput.parentNode.appendChild(suggestionsContainer);
+
+    let searchTimeout;
+
+    // Track the last processed query to avoid duplicate searches
+    let lastProcessedQuery = '';
+    
+    function triggerSearch(query) {
+        if (query.length < 2) {
+            suggestionsContainer.classList.add('hidden');
+            return;
+        }
+
+        // Avoid duplicate searches for the same query
+        if (query === lastProcessedQuery) {
+            return;
+        }
+        lastProcessedQuery = query;
+
+        fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(suggestions => {
+                if (suggestions.length > 0) {
+                    suggestionsContainer.innerHTML = suggestions.map(suggestion =>
+                        `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0 search-suggestion" data-query="${suggestion.split(' - ')[0]}">
+                            <div class="text-sm text-gray-900 dark:text-white">${suggestion}</div>
+                        </div>`
+                    ).join('');
+                    suggestionsContainer.classList.remove('hidden');
+                } else {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            })
+            .catch(() => {
+                suggestionsContainer.classList.add('hidden');
+            });
+    }
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // Only trigger search on space or when query ends with space
+        if (query.endsWith(' ') && query.length > 2) {
+            triggerSearch(query);
+        } else if (query.length < 2) {
+            suggestionsContainer.classList.add('hidden');
+            lastProcessedQuery = '';
+        }
+    });
+
+    // Handle suggestion clicks
+    suggestionsContainer.addEventListener('click', function(e) {
+        const suggestion = e.target.closest('.search-suggestion');
+        if (suggestion) {
+            const query = suggestion.dataset.query;
+            searchInput.value = query;
+            suggestionsContainer.classList.add('hidden');
+            searchInput.form.submit();
+        }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+            suggestionsContainer.classList.add('hidden');
+        }
+    });
+
+                // Handle form submission
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = this.value.trim();
+                    if (query.length >= 2) {
+                        triggerSearch(query);
+                    }
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+
+            // Notification system
+            function showNotification(message, type = 'info') {
+                const container = document.getElementById('notificationContainer');
+                const notification = document.createElement('div');
+                notification.className = `mb-4 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 ${
+                    type === 'success' ? 'bg-green-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                    type === 'warning' ? 'bg-yellow-500 text-white' :
+                    'bg-blue-500 text-white'
+                }`;
+                notification.textContent = message;
+                container.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => container.removeChild(notification), 300);
+                }, 3000);
+            }
+
+            // Like prompt functionality
+            document.querySelectorAll('.like-prompt').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const promptId = this.dataset.promptId;
+                    const button = this;
+                    
+                    fetch(`/api/like/prompt/${promptId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update the like count
+                            const likeCount = button.parentNode.querySelector('.like-count');
+                            if (likeCount) {
+                                likeCount.textContent = data.likes;
+                            }
+                            
+                            // Update button appearance
+                            if (data.action === 'like') {
+                                button.classList.add('text-red-500');
+                                showNotification('Prompt liked!', 'success');
+                            } else {
+                                button.classList.remove('text-red-500');
+                                showNotification('Prompt unliked', 'info');
+                            }
+                        } else {
+                            showNotification(data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Error liking prompt', 'error');
+                    });
+                });
+            });
+
+            // Like post functionality
+            document.querySelectorAll('.like-post').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const postId = this.dataset.postId;
+                    const button = this;
+                    
+                    fetch(`/api/like/post/${postId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update button appearance
+                            if (data.action === 'like') {
+                                button.classList.add('text-red-500');
+                                showNotification('Post liked!', 'success');
+                            } else {
+                                button.classList.remove('text-red-500');
+                                showNotification('Post unliked', 'info');
+                            }
+                        } else {
+                            showNotification(data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Error liking post', 'error');
+                    });
+                });
+            });
+
+            // Login redirect for like buttons
+            document.querySelectorAll('.like-prompt-login, .like-post-login').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const loginUrl = this.dataset.loginUrl;
+                    window.location.href = loginUrl;
+                });
+            });
+
+            // Test prompt functionality (redirects to tool page)
+            document.querySelectorAll('.test-prompt').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const promptContent = this.dataset.promptContent;
+                    const tool = this.dataset.tool;
+                    
+                    // Tool configuration for different AI platforms
+                    const toolConfigs = {
+                        'ChatGPT': {
+                            url: 'https://chat.openai.com/',
+                            name: 'ChatGPT',
+                            instructions: 'Click in the input box and press Ctrl+V to paste',
+                            supportsUrlParams: false
+                        },
+                        'Claude': {
+                            url: 'https://claude.ai/',
+                            name: 'Claude',
+                            instructions: 'Click in the input box and press Ctrl+V to paste',
+                            supportsUrlParams: false
+                        },
+                        'Google Bard': {
+                            url: 'https://bard.google.com/',
+                            name: 'Google Bard',
+                            instructions: 'Click in the message box and press Ctrl+V to paste',
+                            supportsUrlParams: false
+                        },
+                        'Bing Chat': {
+                            url: 'https://www.bing.com/chat',
+                            name: 'Bing Chat',
+                            instructions: 'Click in the message box and press Ctrl+V to paste',
+                            supportsUrlParams: false
+                        },
+                        'Perplexity': {
+                            url: `https://www.perplexity.ai/?q=${encodeURIComponent(promptContent)}`,
+                            name: 'Perplexity AI',
+                            instructions: 'Your prompt has been added to the URL! Just press Enter to search.',
+                            supportsUrlParams: true
+                        },
+                        'You.com': {
+                            url: `https://you.com/search?q=${encodeURIComponent(promptContent)}`,
+                            name: 'You.com',
+                            instructions: 'Your prompt has been added to the URL! Just press Enter to search.',
+                            supportsUrlParams: true
+                        }
+                    };
+                    
+                    const config = toolConfigs[tool] || {
+                        url: 'https://chat.openai.com/',
+                        name: 'AI Tool',
+                        instructions: 'Click in the input box and press Ctrl+V to paste',
+                        supportsUrlParams: false
+                    };
+                    
+                    // Copy prompt to clipboard first
+                    navigator.clipboard.writeText(promptContent).then(() => {
+                        showNotification(`✅ Prompt copied to clipboard! Opening ${config.name}...`, 'success');
+                        
+                        // Create a helpful notification with instructions
+                        const instructionModal = document.createElement('div');
+                        instructionModal.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0, 0, 0, 0.7);
+                            z-index: 10000;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        `;
+                        
+                        instructionModal.innerHTML = `
+                            <div style="
+                                background: white;
+                                border-radius: 12px;
+                                padding: 24px;
+                                max-width: 400px;
+                                margin: 20px;
+                                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                                text-align: center;
+                            ">
+                                <div style="
+                                    width: 60px;
+                                    height: 60px;
+                                    background: #10B981;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    margin: 0 auto 16px;
+                                    font-size: 24px;
+                                ">
+                                    ✅
+                                </div>
+                                <h3 style="
+                                    margin: 0 0 12px 0;
+                                    color: #1F2937;
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                ">
+                                    Prompt Ready!
+                                </h3>
+                                <p style="
+                                    margin: 0 0 16px 0;
+                                    color: #6B7280;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                ">
+                                    Your prompt has been copied to clipboard and ${config.name} will open in a new tab.
+                                </p>
+                                <div style="
+                                    background: #F3F4F6;
+                                    border-radius: 8px;
+                                    padding: 12px;
+                                    margin: 16px 0;
+                                    border-left: 4px solid #10B981;
+                                ">
+                                    <p style="
+                                        margin: 0;
+                                        color: #374151;
+                                        font-size: 13px;
+                                        font-weight: 500;
+                                    ">
+                                        <strong>Next steps:</strong><br>
+                                        ${config.supportsUrlParams ? 
+                                            `1. ${config.name} will open with your prompt pre-filled<br>
+                                             2. Just press Enter to submit!` :
+                                            `1. ${config.name} will open in a new tab<br>
+                                             2. Click in the input/message box<br>
+                                             3. Press <kbd style="background: #E5E7EB; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Ctrl+V</kbd> to paste`
+                                        }
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; justify-content: center;">
+                                    <button onclick="this.closest('.instruction-modal').remove()" style="
+                                        background: #6B7280;
+                                        color: white;
+                                        border: none;
+                                        padding: 10px 16px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-size: 14px;
+                                        font-weight: 500;
+                                    ">
+                                        Got it!
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        instructionModal.className = 'instruction-modal';
+                        document.body.appendChild(instructionModal);
+                        
+                        // Auto-close the modal after 8 seconds
+                        setTimeout(() => {
+                            if (instructionModal.parentNode) {
+                                instructionModal.remove();
+                            }
+                        }, 8000);
+                        
+                        // Open the tool in a new tab after a short delay
+                        setTimeout(() => {
+                            const newTab = window.open(config.url, '_blank');
+                            
+                            if (newTab) {
+                                // For tools that don't support URL params, try to add helpful overlay
+                                if (!config.supportsUrlParams) {
+                                    setTimeout(() => {
+                                        try {
+                                            newTab.postMessage({
+                                                type: 'PROMPT_READY',
+                                                prompt: promptContent,
+                                                tool: config.name
+                                            }, '*');
+                                        } catch (e) {
+                                            // CORS error expected - this is normal
+                                        }
+                                    }, 2000);
+                                }
+                            } else {
+                                showNotification('❌ Popup blocked! Please allow popups and try again.', 'error');
+                            }
+                        }, 1000);
+                        
+                    }).catch(() => {
+                        // Fallback if clipboard API fails
+                        showNotification('❌ Failed to copy prompt. Please copy it manually.', 'error');
+                        const newTab = window.open(config.url, '_blank');
+                        if (newTab) {
+                            showNotification(`📋 Prompt content: ${promptContent.substring(0, 100)}...`, 'info');
+                        }
+                    });
+                });
+            });
+        });
+        </script>
+{% endblock %}

@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{{ prompt.title }} - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<!-- Prompt Detail Header -->
+<section class="bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Breadcrumb -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{{ url_for('home') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                        </svg>
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <a href="{{ url_for('prompts') }}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white">Prompts</a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">{{ prompt.title }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Prompt Header -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Prompt Info -->
+            <div class="lg:col-span-2">
+                <div class="flex items-start space-x-4">
+                    <div class="text-6xl">
+                        {% if prompt.category == 'Writing' %}✍️
+                        {% elif prompt.category == 'Coding' %}💻
+                        {% elif prompt.category == 'Design' %}🎨
+                        {% elif prompt.category == 'Marketing' %}📢
+                        {% else %}🤖{% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">{{ prompt.title }}</h1>
+                        <p class="text-xl text-gray-600 dark:text-gray-300 mb-4">for {{ prompt.tool }} • {{ prompt.category }}</p>
+                        
+                        <!-- Stats and Info -->
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                                <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ prompt.upvotes }}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                                <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ prompt.downvotes }}</span>
+                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">by {{ prompt.author.username }}</span>
+                            <span class="text-gray-500 dark:text-gray-400">• {{ prompt.created_at.strftime('%B %d, %Y') }}</span>
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            {% for tag in prompt.tags|from_json %}
+                                <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-sm rounded-full">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-4">
+                            <button id="testPromptBtn" data-prompt-id="{{ prompt.id }}" 
+                                    class="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Test Prompt
+                            </button>
+                            <button id="bookmarkPromptBtn" data-prompt-id="{{ prompt.id }}" 
+                                    class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                </svg>
+                                Save Prompt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Prompt Stats -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Prompt Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Upvotes</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ prompt.upvotes }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Downvotes</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ prompt.downvotes }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Likes</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ prompt.likes }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Category</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ prompt.category }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Tool</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ prompt.tool }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Author Info -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">👤 Author</h3>
+                    <div class="flex items-center space-x-3">
+                        <div class="text-2xl">{{ prompt.author.avatar }}</div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ prompt.author.username }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Member since {{ prompt.author.joined_at.strftime('%B %Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Prompt Content -->
+<section class="py-12 bg-white dark:bg-gray-900">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">📝 Prompt Content</h2>
+            <div class="prose prose-lg dark:prose-invert max-w-none">
+                <pre class="whitespace-pre-wrap text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-600 font-mono text-sm">{{ prompt.content }}</pre>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Prompts -->
+<section class="py-12 bg-gray-50 dark:bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">🔗 Related Prompts</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- This would be populated with related prompts in a real app -->
+            <div class="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-6 text-center">
+                <p class="text-gray-500 dark:text-gray-400">More prompts coming soon...</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Test prompt functionality
+    document.getElementById('testPromptBtn').addEventListener('click', function() {
+        const promptId = this.dataset.promptId;
+        showNotification('Opening prompt test interface...', 'info');
+        // In a real app, this would open the test modal
+        setTimeout(() => {
+            window.location.href = '/prompts';
+        }, 1500);
+    });
+
+    // Bookmark prompt functionality
+    document.getElementById('bookmarkPromptBtn').addEventListener('click', function() {
+        const promptId = this.dataset.promptId;
+        const btn = this;
+        
+        // Toggle bookmark
+        fetch(`/api/bookmark/prompt/${promptId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.action === 'bookmark') {
+                    btn.innerHTML = `
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                        </svg>
+                        Saved
+                    `;
+                    btn.classList.remove('border-gray-300', 'text-gray-700', 'dark:border-gray-600', 'dark:text-gray-300');
+                    btn.classList.add('bg-green-100', 'border-green-300', 'text-green-700', 'dark:bg-green-900/20', 'dark:border-green-600', 'dark:text-green-300');
+                } else {
+                    btn.innerHTML = `
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                        </svg>
+                        Save Prompt
+                    `;
+                    btn.classList.remove('bg-green-100', 'border-green-300', 'text-green-700', 'dark:bg-green-900/20', 'dark:border-green-600', 'dark:text-green-300');
+                    btn.classList.add('border-gray-300', 'text-gray-700', 'dark:border-gray-600', 'dark:text-gray-300');
+                }
+                showNotification(data.message, 'success');
+            } else {
+                showNotification('Error saving prompt', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error saving prompt', 'error');
+        });
+    });
+
+    // Notification helper
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        let bgColor = 'bg-blue-500';
+        if (type === 'success') bgColor = 'bg-green-500';
+        else if (type === 'error') bgColor = 'bg-red-500';
+        else if (type === 'warning') bgColor = 'bg-yellow-500';
+        
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium z-50 ${bgColor} shadow-lg`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}
