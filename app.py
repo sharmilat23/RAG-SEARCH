@@ -67,6 +67,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 # Database configuration - use DATABASE_URL, fallback to SQLite for local dev
 database_url = os.environ.get('DATABASE_URL')
+if not database_url:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    database_url = 'sqlite:///' + os.path.join(basedir, 'app.db')
+    print(f"💡 No DATABASE_URL set, using SQLite: {database_url}")
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -1559,455 +1563,37 @@ def prompt_detail(prompt_id):
 def ai_agent():
     return render_template('ai_agent.html')
 
-@app.route('/debug/webhook')
-@login_required
-def debug_webhook():
-    """Debug endpoint to check webhook configuration."""
-    webhook_url = os.environ.get('AI_AGENT_WEBHOOK_URL')
-    
-    return jsonify({
-        'webhook_configured': webhook_url is not None,
-        'webhook_url': webhook_url,
-        'source': 'environment_variable' if webhook_url else 'not_configured',
-        'message': 'Webhook is configured and ready to use' if webhook_url else 'Webhook is not configured. Set AI_AGENT_WEBHOOK_URL environment variable.'
-    })
-
-@app.route('/debug/webhook/test', methods=['POST'])
-@login_required
-def test_webhook():
-    """Test endpoint to debug webhook response format."""
-    webhook_url = os.environ.get('AI_AGENT_WEBHOOK_URL')
-    
-    if not webhook_url:
-        return jsonify({
-            'error': 'No webhook URL configured',
-            'message': 'Set AI_AGENT_WEBHOOK_URL environment variable to test webhook',
-            'webhook_url': None
-        })
-    
-    # Test payload
-    test_payload = {
-        'query': 'test query for debugging',
-        'task_type': 'coding',
-        'task_description': 'test description',
-        'full_query': 'test query for debugging type:coding test description'
-    }
-    
-    try:
-        import requests
-        response = requests.post(
-            webhook_url,
-            json=test_payload,
-            headers={'Content-Type': 'application/json'},
-            timeout=30
-        )
-        
-        return jsonify({
-            'webhook_url': webhook_url,
-            'test_payload': test_payload,
-            'response_status': response.status_code,
-            'response_headers': dict(response.headers),
-            'response_text': response.text,
-            'response_json': response.json() if response.headers.get('content-type', '').startswith('application/json') else None
-        })
-    except Exception as e:
-        return jsonify({
-            'webhook_url': webhook_url,
-            'test_payload': test_payload,
-            'error': str(e),
-            'error_type': type(e).__name__
-        })
-
 @app.route('/api/agent/chat', methods=['POST'])
 @login_required
 @limiter.limit("10 per day", key_func=lambda: str(current_user.id) if current_user.is_authenticated else get_remote_address())
 @limiter.limit("10 per minute")
 def agent_chat():
+    """
+    AI Agent chat endpoint — powered by the RAG pipeline.
+    Replicates the n8n workflow: Gemini embeddings → Supabase retrieval → Mistral LLM.
+    """
     data = request.get_json() or {}
     user_input = (data.get('message') or '').strip()
-    task_type = (data.get('task_type') or '').strip().lower()
-    task_description = (data.get('task_description') or '').strip()
     if not user_input:
-        return jsonify({'response': 'Please provide a query.', 'items': []})
+        return jsonify({'response': 'Please provide a query.', 'tools': []})
 
-    # Build enriched query
-    q_parts = [user_input]
-    if task_type:
-        q_parts.append(f"type:{task_type}")
-    if task_description:
-        q_parts.append(task_description)
-    q = ' '.join([p for p in q_parts if p])
-    ql = q.lower()
+    # Session ID: use user ID for persistent per-user conversation memory
+    session_id = f"user_{current_user.id}"
 
-    # Check if webhook URL is configured
-    webhook_url = os.environ.get('AI_AGENT_WEBHOOK_URL')
-    
-    print(f"DEBUG: Webhook URL configured: {webhook_url is not None}")
-    if webhook_url:
-        print(f"DEBUG: Using webhook URL: {webhook_url}")
-    else:
-        print("DEBUG: No webhook URL configured in AI_AGENT_WEBHOOK_URL environment variable")
-    
-    # Try webhook first - if it succeeds, return immediately
-    webhook_success = False
-    if webhook_url:
-        try:
-            import requests
-            # Send query to webhook
-            webhook_payload = {
-                'query': user_input,
-                'task_type': task_type,
-                'task_description': task_description,
-                'full_query': q
-            }
-            print(f"DEBUG: Sending webhook request with payload: {webhook_payload}")
-            
-            response = requests.post(
-                webhook_url,
-                json=webhook_payload,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
-            )
-            print(f"DEBUG: Webhook response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                webhook_data = response.json()
-                print(f"DEBUG: Webhook response data: {webhook_data}")
-                
-                # Parse webhook response - handle different response formats
-                tools_legacy = []
-                
-                # Check for nested 'output' structure first
-                if 'output' in webhook_data and isinstance(webhook_data['output'], dict):
-                    print("DEBUG: Found nested 'output' structure")
-                    print(f"DEBUG: Original webhook_data keys: {list(webhook_data.keys())}")
-                    webhook_data = webhook_data['output']
-                    print(f"DEBUG: After extracting 'output', new keys: {list(webhook_data.keys())}")
-                
-                # Check for 'tools' array in response
-                if 'tools' in webhook_data and isinstance(webhook_data['tools'], list):
-                    print(f"DEBUG: Found {len(webhook_data['tools'])} tools in response")
-                    for i, tool_data in enumerate(webhook_data['tools']):
-                        print(f"DEBUG: Processing tool {i}: {tool_data}")
-                        if isinstance(tool_data, dict):
-                            # Handle different field names that might be used
-                            name = tool_data.get('name') or tool_data.get('title') or tool_data.get('tool_name', 'Unknown Tool')
-                            best_for = tool_data.get('best_for') or tool_data.get('description') or tool_data.get('purpose', 'AI Tool')
-                            unique_features = tool_data.get('unique_features') or tool_data.get('features') or tool_data.get('capabilities', 'Various features')
-                            link = tool_data.get('link') or tool_data.get('url') or tool_data.get('website', '')
-                            
-                            tools_legacy.append({
-                                'id': i + 1,  # Use index as ID
-                                'name': name,
-                                'description': f"{best_for}. {unique_features}",
-                                'short_description': best_for,
-                                'logo': tool_data.get('logo', '🔧'),
-                                'category': tool_data.get('category', 'AI Tools'),
-                                'rating': tool_data.get('rating', 0.0),
-                                'review_count': tool_data.get('review_count', 0),
-                                'pricing': tool_data.get('pricing', 'Unknown'),
-                                'website': link
-                            })
-                        else:
-                            print(f"DEBUG: Tool {i} is not a dict: {tool_data}")
-                
-                # Also check if the response itself is a list of tools
-                elif isinstance(webhook_data, list):
-                    print(f"DEBUG: Response is a list with {len(webhook_data)} items")
-                    for i, tool_data in enumerate(webhook_data):
-                        if isinstance(tool_data, dict):
-                            name = tool_data.get('name') or tool_data.get('title') or tool_data.get('tool_name', 'Unknown Tool')
-                            best_for = tool_data.get('best_for') or tool_data.get('description') or tool_data.get('purpose', 'AI Tool')
-                            unique_features = tool_data.get('unique_features') or tool_data.get('features') or tool_data.get('capabilities', 'Various features')
-                            link = tool_data.get('link') or tool_data.get('url') or tool_data.get('website', '')
-                            
-                            tools_legacy.append({
-                                'id': i + 1,
-                                'name': name,
-                                'description': f"{best_for}. {unique_features}",
-                                'short_description': best_for,
-                                'logo': tool_data.get('logo', '🔧'),
-                                'category': tool_data.get('category', 'AI Tools'),
-                                'rating': tool_data.get('rating', 0.0),
-                                'review_count': tool_data.get('review_count', 0),
-                                'pricing': tool_data.get('pricing', 'Unknown'),
-                                'website': link
-                            })
-                
-                # Check for direct response with tool information
-                elif isinstance(webhook_data, dict) and ('name' in webhook_data or 'title' in webhook_data):
-                    print("DEBUG: Response appears to be a single tool object")
-                    name = webhook_data.get('name') or webhook_data.get('title') or 'Unknown Tool'
-                    best_for = webhook_data.get('best_for') or webhook_data.get('description') or webhook_data.get('purpose', 'AI Tool')
-                    unique_features = webhook_data.get('unique_features') or webhook_data.get('features') or webhook_data.get('capabilities', 'Various features')
-                    link = webhook_data.get('link') or webhook_data.get('url') or webhook_data.get('website', '')
-                    
-                    tools_legacy.append({
-                        'id': 1,
-                        'name': name,
-                        'description': f"{best_for}. {unique_features}",
-                        'short_description': best_for,
-                        'logo': webhook_data.get('logo', '🔧'),
-                        'category': webhook_data.get('category', 'AI Tools'),
-                        'rating': webhook_data.get('rating', 0.0),
-                        'review_count': webhook_data.get('review_count', 0),
-                        'pricing': webhook_data.get('pricing', 'Unknown'),
-                        'website': link
-                    })
-                else:
-                    print(f"DEBUG: Unexpected webhook response format: {webhook_data}")
-                
-                print(f"DEBUG: Processed {len(tools_legacy)} valid tools from webhook")
-                if tools_legacy:
-                    print("DEBUG: Returning webhook response")
-                    print(f"DEBUG: Tools being returned: {[tool['name'] for tool in tools_legacy]}")
-                    response_data = {
-                        'intent': 'tools',
-                        'items': [],
-                        'summary': None,
-                        'response': f'Here are {len(tools_legacy)} AI tool recommendation(s) based on your query:',
-                        'tools': tools_legacy
-                    }
-                    print(f"DEBUG: Full response data: {response_data}")
-                    webhook_success = True
-                    return jsonify(response_data)
-                else:
-                    print("DEBUG: No valid tools found in webhook response, falling back to local search")
-            else:
-                print(f"DEBUG: Webhook returned non-200 status: {response.status_code}, {response.text}")
-        except requests.exceptions.Timeout:
-            print("DEBUG: Webhook request timed out after 30 seconds")
-        except requests.exceptions.ConnectionError as e:
-            print(f"DEBUG: Webhook connection error: {e}")
-        except requests.exceptions.RequestException as e:
-            print(f"DEBUG: Webhook request error: {e}")
-        except Exception as e:
-            # Log error but continue with local search as fallback
-            print(f"DEBUG: Webhook error: {e}")
-            import traceback
-            print(f"DEBUG: Webhook error traceback: {traceback.format_exc()}")
-            print("DEBUG: Falling back to local search due to webhook error")
-    else:
-        print("DEBUG: No webhook URL configured, using local search")
-
-    # Only reach here if webhook failed or wasn't configured
-    if not webhook_success:
-        print("DEBUG: Starting local search fallback")
-    
-    # Light intent classification
-    intent = data.get('intent') or 'auto'
-    if intent == 'auto':
-        if any(w in ql for w in ['prompt', 'prompts', 'system prompt']):
-            intent = 'prompts'
-        elif any(w in ql for w in ['post', 'review', 'discussion', 'question']):
-            intent = 'posts'
-        else:
-            intent = 'tools'
-
-    # Light routing nudge based on task_type
-    if task_type in ['coding', 'code', 'programming']:
-        intent = 'tools'
-        q += ' coding developer code review debugging'
-    elif task_type in ['images', 'image']:
-        intent = 'tools'
-        q += ' image generation graphics design'
-    elif task_type in ['pdf']:
-        intent = 'tools'
-        q += ' pdf summarize extract ocr'
-    elif task_type in ['presentation', 'slides']:
-        intent = 'tools'
-        q += ' slide deck powerpoint keynote google slides'
-    elif task_type in ['research']:
-        intent = 'tools'
-        q += ' research summarize papers citations'
-    elif task_type in ['marketing']:
-        intent = 'tools'
-        q += ' marketing content seo campaign social ads'
-
-    # Simple database search based on intent
-    if intent == 'tools':
-        # Try semantic search first, fall back to keyword search
-        semantic_engine = get_semantic_search()
-        
-        if semantic_engine:
-            # Use hybrid search (semantic + keyword)
-            try:
-                search_results = semantic_engine.hybrid_search(
-                    query=q,
-                    limit=8,
-                    semantic_weight=0.7,
-                    keyword_weight=0.3,
-                    min_score=0.1
-                )
-                # Convert to expected format: list of (score, Tool) tuples
-                topn = []
-                for tool_data, score in search_results:
-                    tool = db.session.get(Tool, tool_data['id'])
-                    if tool:
-                        topn.append((score, tool))
-                print(f"DEBUG: Semantic search returned {len(topn)} results")
-            except Exception as e:
-                print(f"DEBUG: Semantic search failed, falling back to keyword: {e}")
-                # Fallback to keyword search
-                search_terms = q.split()
-                query = Tool.query
-                for term in search_terms:
-                    query = query.filter(
-                        db.or_(
-                            Tool.name.contains(term),
-                            Tool.description.contains(term),
-                            Tool.short_description.contains(term),
-                            Tool.category.contains(term)
-                        )
-                    )
-                tools = query.order_by(Tool.rating.desc(), Tool.review_count.desc()).limit(8).all()
-                topn = [(1.0, tool) for tool in tools]
-        else:
-            # Fallback: keyword search if semantic not available
-            search_terms = q.split()
-            query = Tool.query
-            for term in search_terms:
-                query = query.filter(
-                    db.or_(
-                        Tool.name.contains(term),
-                        Tool.description.contains(term),
-                        Tool.short_description.contains(term),
-                        Tool.category.contains(term)
-                    )
-                )
-            tools = query.order_by(Tool.rating.desc(), Tool.review_count.desc()).limit(8).all()
-            topn = [(1.0, tool) for tool in tools]
-    elif intent == 'prompts':
-        # Search prompts by title, content, or tool
-        search_terms = q.split()
-        query = Prompt.query
-        for term in search_terms:
-            query = query.filter(
-                db.or_(
-                    Prompt.title.contains(term),
-                    Prompt.content.contains(term),
-                    Prompt.tool.contains(term),
-                    Prompt.category.contains(term)
-                )
-            )
-        prompts = query.order_by(Prompt.upvotes.desc(), Prompt.likes.desc()).limit(8).all()
-        topn = [(1.0, prompt) for prompt in prompts]
-    else:  # posts
-        # Search posts by title or content
-        search_terms = q.split()
-        query = Post.query
-        for term in search_terms:
-            query = query.filter(
-                db.or_(
-                    Post.title.contains(term),
-                    Post.content.contains(term)
-                )
-            )
-        posts = query.order_by(Post.upvotes.desc(), Post.likes.desc()).limit(8).all()
-        topn = [(1.0, post) for post in posts]
-
-    # Compose grounded snippets and links
-    items = []
-    for score, obj in topn:
-        if isinstance(obj, Tool):
-            why = []
-            if obj.rating and obj.rating >= 4.2:
-                why.append('high rating')
-            if obj.review_count and obj.review_count > 5:
-                why.append(f"{obj.review_count} reviews")
-            items.append({
-                'type': 'tool',
-                'id': obj.id,
-                'title': obj.name,
-                'snippet': obj.short_description or (obj.description[:200] + '...'),
-                'category': obj.category,
-                'rating': obj.rating,
-                'review_count': obj.review_count,
-                'website': obj.website,
-                'link': url_for('tool_detail', tool_id=obj.id),
-                'why': ', '.join(why) if why else 'text relevance'
-            })
-        elif isinstance(obj, Prompt):
-            items.append({
-                'type': 'prompt',
-                'id': obj.id,
-                'title': obj.title,
-                'snippet': obj.content[:220] + ('...' if len(obj.content) > 220 else ''),
-                'tool': obj.tool,
-                'category': obj.category,
-                'upvotes': obj.upvotes,
-                'link': url_for('prompt_detail', prompt_id=obj.id),
-                'why': 'text relevance'
-            })
-        elif isinstance(obj, Post):
-            items.append({
-                'type': 'post',
-                'id': obj.id,
-                'title': obj.title,
-                'snippet': obj.content[:220] + ('...' if len(obj.content) > 220 else ''),
-                'upvotes': obj.upvotes,
-                'comments': obj.comments,
-                'link': url_for('post_detail', post_id=obj.id),
-                'why': 'text relevance'
-            })
-
-    # Optional short generation if OpenAI available (lazy load)
-    summary = None
-    if os.environ.get('OPENAI_API_KEY') or os.environ.get('OPENAI_KEY'):
-        try:
-            # Only load OpenAI if we have results to summarize
-            if items:
-                from openai import OpenAI  # type: ignore
-                client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY') or os.environ.get('OPENAI_KEY'))
-                bullets = '\n'.join([f"- {it['title']} ({it['type']}) — {it['why']}" for it in items[:5]])
-                prompt = (
-                    "Summarize the following items in 3-5 concise bullets. "
-                    "Each bullet: 1 line, grounded, no hallucinations, mention category/tool when relevant.\n" + bullets
-                )
-                resp = client.chat.completions.create(model='gpt-4o-mini', messages=[{"role": "user", "content": prompt}], temperature=0.2, max_tokens=180)
-                summary = resp.choices[0].message.content
-        except Exception:
-            summary = None
-
-    # Backward-compatible fields expected by the frontend (response + tools)
-    if intent == 'tools':
-        default_response = 'Here are top matches based on your request:'
-    elif intent == 'prompts':
-        default_response = 'Here are relevant prompts:'
-    else:
-        default_response = 'Here are relevant posts:'
-
-    response_text = summary or default_response
-
-    tools_legacy = []
-    if intent == 'tools':
-        for it in items:
-            if it.get('type') != 'tool':
-                continue
-            # Fetch fresh to ensure fields exist
-            tool_obj = db.session.get(Tool, it['id'])
-            if not tool_obj:
-                continue
-            tools_legacy.append({
-                'id': tool_obj.id,
-                'name': tool_obj.name,
-                'description': tool_obj.description,
-                'short_description': tool_obj.short_description,
-                'logo': tool_obj.logo,
-                'category': tool_obj.category,
-                'rating': tool_obj.rating,
-                'review_count': tool_obj.review_count,
-                'pricing': tool_obj.pricing,
-                'website': tool_obj.website
-            })
+    try:
+        from rag_pipeline import generate_response
+        response_text = generate_response(user_input, session_id)
+    except Exception as e:
+        print(f"❌ RAG pipeline error: {e}")
+        import traceback
+        traceback.print_exc()
+        response_text = "I'm sorry, I encountered an error while processing your request. Please try again."
 
     return jsonify({
-        'intent': intent,
-        'items': items,
-        'summary': summary,
         'response': response_text,
-        'tools': tools_legacy
+        'tools': []  # Kept for frontend backward compatibility
     })
+
 
 @app.route('/prompts')
 def prompts():
@@ -3621,17 +3207,16 @@ def ingest_tool_endpoint():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        
         # Lightweight migration: ensure 'type' column exists on 'post' table
         try:
-            # PostgreSQL-compatible way to check if column exists
-            result = db.session.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'post' AND column_name = 'type'
-            """))
-            if not result.fetchone():
-                db.session.execute(text("ALTER TABLE post ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'post'"))
-                db.session.commit()
+            if 'post' in inspector.get_table_names():
+                columns = [col['name'] for col in inspector.get_columns('post')]
+                if 'type' not in columns:
+                    db.session.execute(text("ALTER TABLE post ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'post'"))
+                    db.session.commit()
         except Exception as e:
             # Rollback any failed transaction and don't block app startup
             db.session.rollback()
@@ -3639,16 +3224,12 @@ if __name__ == '__main__':
         
         # Lightweight migration: ensure 'google_id' column exists on 'user' table
         try:
-            # PostgreSQL-compatible way to check if column exists
-            result = db.session.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'user' AND column_name = 'google_id'
-            """))
-            if not result.fetchone():
-                db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN google_id VARCHAR(50)"))
-                db.session.commit()
-                print("✅ Added google_id column to user table")
+            if 'user' in inspector.get_table_names():
+                columns = [col['name'] for col in inspector.get_columns('user')]
+                if 'google_id' not in columns:
+                    db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN google_id VARCHAR(50)"))
+                    db.session.commit()
+                    print("✅ Added google_id column to user table")
         except Exception as e:
             # Rollback any failed transaction and don't block app startup
             db.session.rollback()
