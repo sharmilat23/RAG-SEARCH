@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ANY SITE HUB — AI Tools, Prompts & Workflows{% endblock %}</title>
-    <meta name="description" content="{% block description %}ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.{% endblock %}">
+    <title>{% block title %}ANYWEBSITE — AI Tools, Prompts & Workflows{% endblock %}</title>
+    <meta name="description" content="{% block description %}ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows. Find productivity tools, AI writing assistants, image generators, and more.{% endblock %}">
     <meta name="keywords" content="{% block keywords %}{{ DEFAULT_SEO_KEYWORDS }}{% endblock %}">
     <meta name="author" content="{{ SITE_NAME }}">
     {% block robots %}
@@ -82,7 +82,7 @@
         "height": 512
       },
       "name": "ANY SITE HUB",
-      "description": "ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.",
+      "description": "ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows. Find productivity tools, AI writing assistants, image generators, and more.",
       "sameAs": [
         "https://twitter.com/AIToolsHub"
       ]
@@ -93,11 +93,11 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "url": "https://www.anysitehub.live",
-      "name": "ANY SITE HUB",
-      "description": "ANY SITE HUB (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.",
+      "name": "ANYWEBSITE",
+      "description": "ANYWEBSITE (aka AI TOOLS HUB) is your hub to discover and compare AI tools, prompts, and workflows by STERO SONIC LABS. Find productivity tools, AI writing assistants, image generators, and more.",
       "publisher": {
         "@type": "Organization",
-        "name": "ANY SITE HUB",
+        "name": "ANYWEBSITE",
         "logo": {
           "@type": "ImageObject",
           "url": "https://www.anysitehub.live/static/logo.svg"
@@ -206,7 +206,7 @@
                 <!-- Logo -->
                 <a href="{{ url_for('home') }}" class="flex items-center space-x-2" aria-label="Homepage">
                     <img src="{{ url_for('static', filename='logo-icon.svg') }}" alt="ANY SITE HUB Logo" class="h-8 w-8">
-                    <span class="hidden sm:block text-xl font-bold text-gray-900 dark:text-white">ANY SITE HUB</span>
+                    <span class="hidden sm:block text-xl font-bold text-gray-900 dark:text-white">ANYWEBSITE</span>
                 </a>
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-8">
@@ -387,7 +387,7 @@
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2025 STERO SONIC LABS. All rights reserved.</p>
+                <p>&copy; 2025. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -618,7 +618,7 @@
         </div>
         <div class="cb-header-text">
           <h3>AI Assistant</h3>
-          <p>Powered by RAG • 10 free queries/day</p>
+          <p>Powered by RAG</p>
         </div>
         <button class="cb-close" onclick="toggleChatbot()" aria-label="Close chat">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
