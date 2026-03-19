@@ -273,19 +273,13 @@ Tags: {tags}"""
     # Build system message
     system_content = SYSTEM_PROMPT + f"\n\n========== RETRIEVED TOOLS FROM DATABASE ==========\n{context_text}\n========== END OF RETRIEVED TOOLS =========="
 
-    messages = [
-        {"role": "system", "content": system_content}
-    ]
-
-    # Add conversation history (replicates Postgres Chat Memory with contextWindowLength=10)
     if chat_history:
-        messages.append({
-            "role": "system",
-            "content": f"--- Previous Conversation ---\n{chat_history}"
-        })
+        system_content += f"\n\n--- Previous Conversation ---\n{chat_history}"
 
-    # Add current user query
-    messages.append({"role": "user", "content": query})
+    messages = [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": query}
+    ]
 
     return messages
 
