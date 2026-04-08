@@ -17,15 +17,15 @@ requests-oauthlib==1.3.1
 python-dotenv==1.1.1
 Flask-Mail==0.9.1
 
+# Production server (Linux/Azure)
+gunicorn>=21.2.0
+gevent>=24.2.1
+
 # DB
 psycopg2-binary==2.9.10
 
 # Optional (rate limiting memory fallback)
 redis>=4.5
-
-# Semantic Search
-sentence-transformers>=2.2.0
-numpy>=1.24.0
 
 # RAG Pipeline (n8n workflow migration)
 mistralai==2.0.5

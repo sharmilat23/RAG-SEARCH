@@ -83,7 +83,8 @@ def _get_mistral():
     if _mistral_client is None:
         try:
             from mistralai.client import Mistral
-            api_key = os.environ.get("MISTRAL_API_KEY", "")
+            # Normalize env var input to avoid auth failures from accidental quotes/spaces.
+            api_key = (os.environ.get("MISTRAL_API_KEY", "") or "").strip().strip('"').strip("'")
             if not api_key:
                 print("⚠️  MISTRAL_API_KEY not configured")
                 return None
@@ -310,7 +311,14 @@ def call_mistral(messages: List[Dict]) -> str:
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"❌ Mistral API call failed: {e}")
+        error_text = str(e)
+        print(f"❌ Mistral API call failed: {error_text}")
+
+        if "401" in error_text or "Unauthorized" in error_text:
+            return "I encountered an authentication error with the AI provider. Please verify MISTRAL_API_KEY and restart the server."
+        if "429" in error_text or "capacity" in error_text.lower():
+            return "The AI provider is currently at capacity. Please retry in a moment."
+
         return f"I encountered an error generating a response. Please try again. (Error: {type(e).__name__})"
 
 

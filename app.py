@@ -32,24 +32,47 @@ _oauth = None
 _google = None
 _oauth_initialized = False
 
-# Lazy load semantic search engine
-_semantic_search_engine = None
+# Reuse the same RAG retrieval pipeline as chatbot for relevance search.
+def rag_search_tools(query: str, limit: int, category_filter: str = 'All', pricing_filter: str = 'All'):
+    """Return tools ranked by the chatbot RAG retriever (Supabase + Gemini)."""
+    try:
+        from rag_pipeline import retrieve_documents
+        docs = retrieve_documents(query, top_k=max(limit * 2, 5))
+    except Exception as e:
+        print(f"⚠️  RAG retrieval unavailable for /search: {e}")
+        return []
 
-def get_semantic_search():
-    """Get semantic search engine, initializing lazily"""
-    global _semantic_search_engine
-    if _semantic_search_engine is None:
-        try:
-            from semantic_search import get_search_engine
-            _semantic_search_engine = get_search_engine()
-            print("✅ Semantic search engine initialized")
-        except ImportError as e:
-            print(f"⚠️  Semantic search not available: {e}")
-            _semantic_search_engine = False
-        except Exception as e:
-            print(f"⚠️  Semantic search initialization failed: {e}")
-            _semantic_search_engine = False
-    return _semantic_search_engine if _semantic_search_engine else None
+    matched_tools = []
+    seen_tool_ids = set()
+
+    for doc in docs:
+        metadata = doc.get('metadata', {})
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except Exception:
+                metadata = {}
+
+        tool_name = (metadata.get('name') or '').strip()
+        if not tool_name:
+            continue
+
+        tool = Tool.query.filter(db.func.lower(Tool.name) == tool_name.lower()).first()
+        if not tool or tool.id in seen_tool_ids:
+            continue
+
+        if category_filter != 'All' and tool.category != category_filter:
+            continue
+        if pricing_filter != 'All' and tool.pricing != pricing_filter:
+            continue
+
+        seen_tool_ids.add(tool.id)
+        matched_tools.append(tool)
+
+        if len(matched_tools) >= limit:
+            break
+
+    return matched_tools
 
 # Module cache for frequently used imports
 _module_cache = {}
@@ -64,7 +87,9 @@ def get_cached_module(module_name):
     return _module_cache[module_name]
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-change-me')
+if app.config['SECRET_KEY'] == 'dev-insecure-secret-key-change-me':
+    print("⚠️  SECRET_KEY not set. Using insecure development default.")
 # Database configuration - use DATABASE_URL, fallback to SQLite for local dev
 database_url = os.environ.get('DATABASE_URL')
 if not database_url:
@@ -992,43 +1017,21 @@ def search():
         }
         
         if query:
-            # Search tools using semantic search
+            # Search tools
             if search_type in ['tools', 'all']:
-                semantic_engine = get_semantic_search()
-                
-                if semantic_engine and sort_by == 'relevance':
-                    # Use hybrid semantic search for relevance sorting
-                    try:
-                        search_results = semantic_engine.hybrid_search(
-                            query=query,
-                            limit=per_page * 2,  # Get more to filter
-                            semantic_weight=0.7,
-                            keyword_weight=0.3,
-                            min_score=0.1
-                        )
-                        
-                        # Fetch full Tool objects and apply filters
-                        tools_list = []
-                        for tool_data, score in search_results:
-                            tool = db.session.get(Tool, tool_data['id'])
-                            if tool:
-                                # Apply category and pricing filters
-                                if category_filter != 'All' and tool.category != category_filter:
-                                    continue
-                                if pricing_filter != 'All' and tool.pricing != pricing_filter:
-                                    continue
-                                tools_list.append(tool)
-                                if len(tools_list) >= per_page:
-                                    break
-                        
+                if sort_by == 'relevance':
+                    tools_list = rag_search_tools(
+                        query=query,
+                        limit=per_page,
+                        category_filter=category_filter,
+                        pricing_filter=pricing_filter
+                    )
+                    if tools_list:
                         results['tools'] = tools_list
-                        print(f"DEBUG: Semantic search returned {len(tools_list)} tools for /search")
-                    except Exception as e:
-                        print(f"DEBUG: Semantic search failed in /search, falling back: {e}")
-                        # Fallback to keyword search below
-                        semantic_engine = None
-                
-                if not semantic_engine or sort_by != 'relevance':
+                    else:
+                        print("DEBUG: RAG relevance search returned 0 tools in /search, using keyword fallback")
+
+                if sort_by != 'relevance' or not results['tools']:
                     # Fallback to keyword search for non-relevance sorting or if semantic unavailable
                     tools_query = Tool.query
                     
@@ -1190,52 +1193,49 @@ def api_search():
         
         if query:
             if search_type == 'tools':
-                tools_query = Tool.query
-                
-                # Apply search filter
-                search_terms = query.split()
-                search_conditions = []
-                
-                for term in search_terms:
-                    term_condition = (
-                        Tool.name.ilike(f'%{term}%') |
-                        Tool.description.ilike(f'%{term}%') |
-                        Tool.short_description.ilike(f'%{term}%') |
-                        Tool.category.ilike(f'%{term}%') |
-                        Tool.features.ilike(f'%{term}%') |
-                        Tool.tags.ilike(f'%{term}%')
-                    )
-                    search_conditions.append(term_condition)
-                
-                if search_conditions:
-                    tools_query = tools_query.filter(db.and_(*search_conditions))
-                
-                # Apply filters
-                if category_filter != 'All':
-                    tools_query = tools_query.filter(Tool.category == category_filter)
-                if pricing_filter != 'All':
-                    tools_query = tools_query.filter(Tool.pricing == pricing_filter)
-                
-                # Apply sorting with relevance scoring
                 if sort_by == 'relevance':
-                    tools_query = tools_query.order_by(
-                        db.case(
-                            (Tool.name.ilike(f'%{query}%'), 100),
-                            (Tool.short_description.ilike(f'%{query}%'), 80),
-                            (Tool.description.ilike(f'%{query}%'), 60),
-                            (Tool.category.ilike(f'%{query}%'), 40),
-                            else_=20
-                        ).desc(),
-                        Tool.rating.desc()
+                    tools = rag_search_tools(
+                        query=query,
+                        limit=limit,
+                        category_filter=category_filter,
+                        pricing_filter=pricing_filter
                     )
-                elif sort_by == 'popularity':
-                    tools_query = tools_query.order_by(Tool.review_count.desc(), Tool.rating.desc())
-                elif sort_by == 'rating':
-                    tools_query = tools_query.order_by(Tool.rating.desc(), Tool.review_count.desc())
-                elif sort_by == 'name':
-                    tools_query = tools_query.order_by(Tool.name.asc())
-                
-                tools = tools_query.limit(limit).all()
+                else:
+                    tools_query = Tool.query
+
+                    # Apply search filter
+                    search_terms = query.split()
+                    search_conditions = []
+
+                    for term in search_terms:
+                        term_condition = (
+                            Tool.name.ilike(f'%{term}%') |
+                            Tool.description.ilike(f'%{term}%') |
+                            Tool.short_description.ilike(f'%{term}%') |
+                            Tool.category.ilike(f'%{term}%') |
+                            Tool.features.ilike(f'%{term}%') |
+                            Tool.tags.ilike(f'%{term}%')
+                        )
+                        search_conditions.append(term_condition)
+
+                    if search_conditions:
+                        tools_query = tools_query.filter(db.and_(*search_conditions))
+
+                    # Apply filters
+                    if category_filter != 'All':
+                        tools_query = tools_query.filter(Tool.category == category_filter)
+                    if pricing_filter != 'All':
+                        tools_query = tools_query.filter(Tool.pricing == pricing_filter)
+
+                    # Apply sorting for non-relevance modes
+                    if sort_by == 'popularity':
+                        tools_query = tools_query.order_by(Tool.review_count.desc(), Tool.rating.desc())
+                    elif sort_by == 'rating':
+                        tools_query = tools_query.order_by(Tool.rating.desc(), Tool.review_count.desc())
+                    elif sort_by == 'name':
+                        tools_query = tools_query.order_by(Tool.name.asc())
+
+                    tools = tools_query.limit(limit).all()
                 
                 for tool in tools:
                     # Calculate relevance score
