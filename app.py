@@ -3256,6 +3256,29 @@ if __name__ == '__main__':
             print(f"⚠️  Sample data initialization warning: {e}")
             print("💡 This is normal if tables are empty or don't exist yet")
 
+        # Create a test user for development/testing
+        try:
+            test_email = "test@test.com"
+            test_password = "testpass123"
+            test_username = "testuser"
+            
+            if not User.query.filter_by(email=test_email).first():
+                test_user = User(
+                    username=test_username,
+                    email=test_email,
+                    password_hash=generate_password_hash(test_password),
+                    email_verified=True,
+                    email_verified_at=datetime.utcnow()
+                )
+                db.session.add(test_user)
+                db.session.commit()
+                print(f"✅ Test user created: {test_email} / {test_password}")
+            else:
+                print(f"ℹ️  Test user already exists: {test_email}")
+        except Exception as e:
+            db.session.rollback()
+            print(f"⚠️  Test user creation failed: {e}")
+
         print("🚀 Starting ANY SITE HUB...")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+
+    app.run(debug=True, host='0.0.0.0', port=5000)
