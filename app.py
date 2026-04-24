@@ -1757,6 +1757,29 @@ def login():
         login_identifier = request.form.get('username')  # This field can contain username or email
         password = request.form.get('password')
         
+        # Hardcoded test user credentials - auto-create if doesn't exist
+        if login_identifier in ['loki', 'loki@test.com'] and password == 'Loki@123':
+            user = User.query.filter_by(username='loki').first()
+            if not user:
+                # Auto-create the hardcoded user if it doesn't exist
+                user = User(
+                    username='loki',
+                    email='loki@test.com',
+                    password_hash=generate_password_hash('Loki@123', method='pbkdf2:sha256'),
+                    email_verified=True
+                )
+                db.session.add(user)
+                db.session.commit()
+                print("✅ Auto-created hardcoded user 'loki'")
+            else:
+                # Ensure the user is verified
+                if not user.email_verified:
+                    user.email_verified = True
+                    db.session.commit()
+            
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        
         # Try to find user by username first, then by email
         user = User.query.filter_by(username=login_identifier).first()
         if not user:
@@ -3256,28 +3279,36 @@ if __name__ == '__main__':
             print(f"⚠️  Sample data initialization warning: {e}")
             print("💡 This is normal if tables are empty or don't exist yet")
 
-        # Create a test user for development/testing
+        # Create hardcoded user for deployment
         try:
-            test_email = "test@test.com"
-            test_password = "testpass123"
-            test_username = "testuser"
+            # Hardcoded user credentials
+            loki_email = "loki@test.com"
+            loki_password = "Loki@123"
+            loki_username = "loki"
             
-            if not User.query.filter_by(email=test_email).first():
-                test_user = User(
-                    username=test_username,
-                    email=test_email,
-                    password_hash=generate_password_hash(test_password),
+            existing_user = User.query.filter_by(username=loki_username).first()
+            if not existing_user:
+                loki_user = User(
+                    username=loki_username,
+                    email=loki_email,
+                    password_hash=generate_password_hash(loki_password, method='pbkdf2:sha256'),
                     email_verified=True,
                     email_verified_at=datetime.utcnow()
                 )
-                db.session.add(test_user)
+                db.session.add(loki_user)
                 db.session.commit()
-                print(f"✅ Test user created: {test_email} / {test_password}")
+                print(f"✅ Hardcoded user created: {loki_username} / {loki_email} / {loki_password}")
             else:
-                print(f"ℹ️  Test user already exists: {test_email}")
+                # Update existing user to ensure correct credentials
+                existing_user.email = loki_email
+                existing_user.password_hash = generate_password_hash(loki_password, method='pbkdf2:sha256')
+                existing_user.email_verified = True
+                existing_user.email_verified_at = datetime.utcnow()
+                db.session.commit()
+                print(f"✅ Hardcoded user updated: {loki_username} / {loki_email} / {loki_password}")
         except Exception as e:
             db.session.rollback()
-            print(f"⚠️  Test user creation failed: {e}")
+            print(f"⚠️  Hardcoded user creation/update failed: {e}")
 
         print("🚀 Starting ANY SITE HUB...")
 
