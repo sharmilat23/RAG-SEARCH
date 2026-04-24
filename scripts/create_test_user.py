@@ -22,9 +22,9 @@ def create_test_user():
 
         # Create new test user
         new_user = User(
-            username='testuser',
-            email='test@test.com',
-            password_hash=generate_password_hash('Test1234!', method='pbkdf2:sha256'),
+            username='loki',
+            email='loki@test.com',
+            password_hash=generate_password_hash('Loki@123', method='pbkdf2:sha256'),
             email_verified=True
         )
         db.session.add(new_user)
