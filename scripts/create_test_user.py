@@ -12,12 +12,15 @@ from werkzeug.security import generate_password_hash
 def create_test_user():
     with app.app_context():
         # Check if user already exists
-        user = User.query.filter_by(username='testuser').first()
+        user = User.query.filter_by(username='loki').first()
         if user:
             print("Test user already exists. Updating email verification...")
             user.email_verified = True
             db.session.commit()
             print("Updated test user to verified!")
+            print("Username: loki")
+            print("Email: loki@test.com")
+            print("Password: Loki@123")
             return
 
         # Create new test user
@@ -30,9 +33,9 @@ def create_test_user():
         db.session.add(new_user)
         db.session.commit()
         print("Test user created successfully!")
-        print("Username: testuser")
-        print("Email: test@test.com")
-        print("Password: Test1234!")
+        print("Username: loki")
+        print("Email: loki@test.com")
+        print("Password: Loki@123")
 
 if __name__ == '__main__':
     create_test_user()
