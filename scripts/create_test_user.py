@@ -11,31 +11,38 @@ from werkzeug.security import generate_password_hash
 
 def create_test_user():
     with app.app_context():
+        # Hardcoded user credentials
+        USERNAME = 'loki'
+        EMAIL = 'loki@test.com'
+        PASSWORD = 'Loki@123'
+        
         # Check if user already exists
-        user = User.query.filter_by(username='loki').first()
+        user = User.query.filter_by(username=USERNAME).first()
         if user:
-            print("Test user already exists. Updating email verification...")
+            print(f"User '{USERNAME}' already exists. Updating credentials and verification...")
+            user.email = EMAIL
+            user.password_hash = generate_password_hash(PASSWORD, method='pbkdf2:sha256')
             user.email_verified = True
             db.session.commit()
-            print("Updated test user to verified!")
-            print("Username: loki")
-            print("Email: loki@test.com")
-            print("Password: Loki@123")
+            print(f"✅ Updated user '{USERNAME}'")
+            print(f"Username: {USERNAME}")
+            print(f"Email: {EMAIL}")
+            print(f"Password: {PASSWORD}")
             return
 
         # Create new test user
         new_user = User(
-            username='loki',
-            email='loki@test.com',
-            password_hash=generate_password_hash('Loki@123', method='pbkdf2:sha256'),
+            username=USERNAME,
+            email=EMAIL,
+            password_hash=generate_password_hash(PASSWORD, method='pbkdf2:sha256'),
             email_verified=True
         )
         db.session.add(new_user)
         db.session.commit()
-        print("Test user created successfully!")
-        print("Username: loki")
-        print("Email: loki@test.com")
-        print("Password: Loki@123")
+        print(f"✅ Test user created successfully!")
+        print(f"Username: {USERNAME}")
+        print(f"Email: {EMAIL}")
+        print(f"Password: {PASSWORD}")
 
 if __name__ == '__main__':
     create_test_user()
